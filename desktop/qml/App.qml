@@ -8,12 +8,27 @@ Window {
     visible: true
     title: "PhoneLink"
 
-    ColumnLayout {
+    Rectangle {
         anchors.fill: parent
-        spacing: 6
 
-        NavigationBar {}
+        Item {
+            anchors.fill: parent
 
-        MainContent {}
+            NavigationBar {
+                id: navigationBar
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: mainContent.top
+            }
+
+            MainContent {
+                id: mainContent
+                anchors.top: navigationBar.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+            }
+        }
     }
 }

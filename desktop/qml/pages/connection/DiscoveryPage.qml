@@ -1,5 +1,7 @@
 import QtQuick
 
-Item {
+    Rectangle {
+        radius: 8
+        color: "#222222"
+    }
 
-}
