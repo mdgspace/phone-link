@@ -16,21 +16,51 @@ Rectangle {
         anchors.margins: 10
         spacing: 8
 
+        // TITLE
         Text {
-            text: "Register your device"
+            text: Backend.registering
+                  ? "Device Registered"
+                  : "Register your device"
             color: "white"
             Layout.fillWidth: true
         }
 
-        Button {
-            text: "Connect"
-            Layout.fillWidth: true
+        // REGISTERED STATE
+        ColumnLayout {
+            visible: Backend.registering
+            spacing: 6
+
+            Text {
+                text: "Device Name: " + Backend.deviceName
+                color: "#cccccc"
+            }
+
+            Text {
+                text: "Service: " + "_phonelink._tcp"
+                color: "#888888"
+            }
+
+            Button {
+                text: "Stop Registration"
+                onClicked: Backend.stopRegistration()
+            }
         }
 
-        Text {
-            text: "Waiting for device..."
-            color: "#aaaaaa"
-            Layout.fillWidth: true
+        // NOT REGISTERED STATE
+        ColumnLayout {
+            visible: !Backend.registering
+            spacing: 6
+
+            Button {
+                text: "Connect"
+                Layout.fillWidth: true
+                onClicked: Backend.registerOnMdns()
+            }
+
+            Text {
+                text: "Waiting for device..."
+                color: "#aaaaaa"
+            }
         }
     }
 }

@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 6.10.1 REQUIRED COMPONENTS
     Gui
     Quick
+    DBus
+    Network
 )
 
 qt_standard_project_setup(REQUIRES 6.10)
@@ -38,6 +40,12 @@ qt_add_qml_module(app_phone_link
         qml/widgets/ClipboardWidget.qml
         qml/widgets/FileWidget.qml
         qml/widgets/MessageWidget.qml
+        SOURCES
+        SOURCES
+        SOURCES mdns/mdnsmanager.h mdns/mdnsmanager.cpp
+        SOURCES
+        SOURCES mdns/discoverylist.h mdns/discoverylist.cpp
+        SOURCES core/backend.h core/backend.cpp
 )
 
 set_source_files_properties(
@@ -50,4 +58,9 @@ target_link_libraries(app_phone_link
     PRIVATE
         Qt6::Gui
         Qt6::Quick
+        Qt6::DBus
+        Qt6::Network
+
+        avahi-client
+        avahi-common
 )
