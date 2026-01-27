@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ui/services/mdns_registration.dart';
 import 'package:provider/provider.dart';
+import 'data/local_device.dart';
 import 'ui/home.dart';
 
 class PhoneLinkApp extends StatelessWidget {
-  const PhoneLinkApp({Key? key}) : super(key: key);
+  final LocalDeviceConfigService configService;
+
+  const PhoneLinkApp({Key? key, required this.configService}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -12,15 +15,17 @@ class PhoneLinkApp extends StatelessWidget {
       title: 'Phone Link',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
       home: MultiProvider(
         providers: [
+          // 1. Provide the Service itself (in case other widgets need it)
+          Provider.value(value: configService),
+
+          // 2. Provide the Controller and inject the Service
           ChangeNotifierProvider(
-            create: (_) => MdnsRegistrationController(
-                deviceName: "Phone",
-                port: 5000,
-                serviceType: "_phonelink._tcp"),
+            create: (_) => MdnsRegistrationController(configService),
           ),
         ],
         child: const HomePage(),

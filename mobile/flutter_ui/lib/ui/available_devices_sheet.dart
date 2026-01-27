@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_ui/data/discovered_device.dart';
 import 'package:flutter_ui/services/mdns_discovery.dart';
 import 'package:provider/provider.dart';
 
@@ -57,7 +58,7 @@ void showAvailableDevicesSheet(BuildContext context) {
                   Expanded(
                     child: Consumer<MdnsDiscoveryController>(
                       builder: (context, controller, _) {
-                        final services = controller.services;
+                        final services = controller.devices;
 
                         if (!controller.isRunning) {
                           return const Center(
@@ -73,15 +74,13 @@ void showAvailableDevicesSheet(BuildContext context) {
 
                         return ListView.builder(
                           controller: scrollController,
-                          itemCount: services.length, // mock devices for now
+                          itemCount: services.length,
                           itemBuilder: (context, index) {
                             final service = services[index];
 
                             return deviceContainer(
-                              name: service.name ?? 'Unknown device',
-                              id: service.host ?? 'Unknown host',
-                              connType: 'tcp:${service.port ?? 0}',
-                              connected: false,
+                              device: service,
+                              controller: controller,
                             );
                           },
                         );
@@ -99,60 +98,75 @@ void showAvailableDevicesSheet(BuildContext context) {
 }
 
 Widget deviceContainer({
-  required String name,
-  required String id,
-  required String connType,
-  required bool connected,
+  required DiscoveredDevice device,
+  required MdnsDiscoveryController controller,
 }) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-    child: Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        name,
-                        style: TextStyle(fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                      Text(
-                        "Device ID : $id",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
+  return GestureDetector(
+    onTap: () {
+      if (device.connected) {
+        controller.disconnectFromDevice(device);
+      } else {
+        controller.connectToDevice(device);
+      }
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          device.deviceName,
+                          style: TextStyle(fontSize: 16),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.left,
-                      ),
-                      Text(
-                        "Connection Type : $connType",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
+                        Text(
+                          "Device ID : ${device.instanceName}",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                          textAlign: TextAlign.left,
                         ),
-                        textAlign: TextAlign.left,
-                      ),
-                    ],
+                        Text(
+                          "IPv4 Address : ${device.ipv4.toString()}",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                          textAlign: TextAlign.left,
+                        ),
+                        Text(
+                          "Port : ${device.port}",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                          textAlign: TextAlign.left,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                connected
-                    ? Icon(Icons.circle, color: Colors.grey.shade300)
-                    : Icon(Icons.circle_outlined, color: Colors.grey.shade300)
-              ],
-            )
-          ],
+                  device.connected
+                      ? Icon(Icons.circle, color: Colors.grey.shade300)
+                      : Icon(Icons.circle_outlined, color: Colors.grey.shade300)
+                ],
+              )
+            ],
+          ),
         ),
       ),
     ),

@@ -180,7 +180,7 @@ class _HomePageState extends State<HomePage> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     Text(
-                                      controller.deviceName,
+                                      controller.config.deviceName,
                                       textAlign: TextAlign.center,
                                       style: TextStyle(fontSize: 18),
                                     ),
@@ -189,9 +189,10 @@ class _HomePageState extends State<HomePage> {
                                       textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(height: 25),
-                                    Text("Port : ${controller.port}"),
+                                    Text("Port : ${controller.config.port}"),
                                     const SizedBox(height: 8),
-                                    Text("Service : ${controller.serviceType}"),
+                                    Text(
+                                        "Service : ${controller.config.serviceType}"),
                                     const SizedBox(height: 25),
                                     TextButton(
                                       onPressed: () {
@@ -250,9 +251,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void showEditMdnsDialog(
-      BuildContext context, MdnsRegistrationController controller) {
-    final nameController = TextEditingController(text: deviceName);
-    final portController = TextEditingController(text: port);
+    BuildContext context,
+    MdnsRegistrationController controller,
+  ) {
+    final nameController =
+        TextEditingController(text: controller.config.deviceName);
 
     showDialog(
       context: context,
@@ -296,17 +299,31 @@ class _HomePageState extends State<HomePage> {
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           TextField(
                             controller: nameController,
-                            decoration:
-                                const InputDecoration(labelText: "Device Name"),
+                            decoration: const InputDecoration(
+                              labelText: "Device Name",
+                              helperText:
+                                  "This name is shown to other devices on the network",
+                            ),
                           ),
-                          TextField(
-                            controller: portController,
-                            keyboardType: TextInputType.number,
-                            decoration:
-                                const InputDecoration(labelText: "Port"),
+
+                          const SizedBox(height: 16),
+
+                          // Optional: show port as read-only info
+                          Row(
+                            children: [
+                              const Icon(Icons.info_outline, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Port: ${controller.config.port}",
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -325,10 +342,8 @@ class _HomePageState extends State<HomePage> {
                         const Spacer(),
                         ElevatedButton(
                           onPressed: () {
-                            controller.update(
-                              newName: nameController.text,
-                              newPort: int.parse(portController.text),
-                            );
+                            controller
+                                .updateDeviceName(nameController.text.trim());
                             Navigator.pop(context);
                           },
                           child: const Text("Save"),
