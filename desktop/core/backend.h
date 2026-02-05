@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tcp/tcpserver.h"
 #ifndef BACKEND_H
 #define BACKEND_H
 
@@ -50,9 +51,12 @@ signals:
     void discoveringChanged();
 
 private:
-    // owned components
+    // mDNS
     MdnsManager m_mdnsManager;
     DiscoveryList m_discoveryList;
+
+    // TCP Server
+    TcpServer m_tcpServer;
 
     bool m_registering = false;
     bool m_discovering = false;

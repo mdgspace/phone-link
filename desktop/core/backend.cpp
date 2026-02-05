@@ -4,9 +4,10 @@
 Backend::Backend(QObject *parent)
     : QObject(parent)
 {
-
     qDebug() << "[Backend] constructor";
+    qDebug() << "[Backend] thread:" << QThread::currentThread();
 
+    // mDNS
     m_mdnsManager.start();
 
     connect(&m_mdnsManager,
@@ -14,6 +15,12 @@ Backend::Backend(QObject *parent)
             this,
             &Backend::onDeviceDiscovered,
             Qt::QueuedConnection);
+
+    // TCP
+    if (!m_tcpServer.start()) {
+        // QTcpServer and QTcpSocket are non-blocking, use Qt's event loop and are safe on the main thread
+        qWarning() << "Failed to start TCP server";
+    }
 }
 
 // Getters

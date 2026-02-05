@@ -40,12 +40,14 @@ qt_add_qml_module(app_phone_link
         qml/widgets/ClipboardWidget.qml
         qml/widgets/FileWidget.qml
         qml/widgets/MessageWidget.qml
+
         SOURCES
         SOURCES
         SOURCES mdns/mdnsmanager.h mdns/mdnsmanager.cpp
         SOURCES
         SOURCES mdns/discoverylist.h mdns/discoverylist.cpp
         SOURCES core/backend.h core/backend.cpp
+        SOURCES tcp/tcpserver.h tcp/tcpserver.cpp
 )
 
 set_source_files_properties(
