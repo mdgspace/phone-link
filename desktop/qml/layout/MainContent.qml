@@ -12,9 +12,8 @@ Rectangle {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        anchors.right: sharedPage.left
         anchors.margins: 10
-        width: 350
+        width: 300
 
         color: "#080808"
 
@@ -32,49 +31,21 @@ Rectangle {
                 Layout.minimumHeight: implicitHeight
             }
 
-            DiscoveryPage {
+            ServerControlPage {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
                 Layout.minimumHeight: implicitHeight
             }
 
-            // RegistrationPage {
-            //     id: registrationPage
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.minimumHeight: implicitHeight
 
-            //     anchors.top: parent.top
-            //     anchors.left: parent.left
-            //     anchors.right: parent.right
-
-            //     anchors.bottomMargin: 10
-
-            //     height: 200
-            // }
-
-            // ConnectedPage {
-            //     id: connectedPage
-
-            //     anchors.top: registrationPage.bottom
-            //     anchors.left: parent.left
-            //     anchors.right: parent.right
-
-            //     anchors.topMargin: 10
-            //     height: 200
-            // }
-
-            // DiscoveryPage {
-            //     id: discoveryPage
-
-            //     anchors.top: connectedPage.bottom
-            //     anchors.left: parent.left
-            //     anchors.right: parent.right
-
-            //     anchors.topMargin: 10
-            //     anchors.bottom: parent.bottom
-            // }
+                color: "#222222"
+                radius: 8
+            }
         }
     }
-
-    // }
 
     // SharedPage
     Rectangle {

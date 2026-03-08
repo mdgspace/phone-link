@@ -101,6 +101,11 @@ Widget deviceContainer({
   required DiscoveredDevice device,
   required MdnsDiscoveryController controller,
 }) {
+  print("Device name: ${device.deviceName}");
+  print("IP: ${device.ipv4}");
+  print("Port: ${device.port}");
+  print("Instance: ${device.instanceName}");
+
   return GestureDetector(
     onTap: () {
       if (device.connected) {

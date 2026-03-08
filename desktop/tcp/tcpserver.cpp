@@ -13,9 +13,9 @@ TcpServer::TcpServer(QObject *parent)
             &TcpServer::onNewConnection);
 }
 
-bool TcpServer::start()
+bool TcpServer::start(quint16 port)
 {
-    bool ok = m_server.listen(QHostAddress::Any, TCP_SERVER_PORT);
+    bool ok = m_server.listen(QHostAddress::Any, port);
 
     if (!ok) {
         qWarning() << "TCP server failed to start:" << m_server.errorString();
@@ -27,6 +27,30 @@ bool TcpServer::start()
              << m_server.serverPort();
 
     return true;
+}
+
+void TcpServer::stop()
+{
+    if (!m_server.isListening()) {
+        qDebug() << "TCP server already stopped";
+        return;
+    }
+
+    // Disconnect all clients
+    for (QTcpSocket *client : std::as_const(m_clients)) {
+        if (client->state() == QAbstractSocket::ConnectedState) {
+            client->disconnectFromHost();
+        }
+        client->deleteLater();
+    }
+
+    m_clients.clear();
+    m_buffers.clear();
+
+    // Stop listening
+    m_server.close();
+
+    qDebug() << "TCP server stopped listening";
 }
 
 void TcpServer::onNewConnection()

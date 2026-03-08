@@ -13,8 +13,6 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     Backend backend;
 
-    QDBusConnection bus = QDBusConnection::sessionBus();
-
     QQmlApplicationEngine engine;
 
     engine.rootContext()->setContextProperty("Backend", &backend);

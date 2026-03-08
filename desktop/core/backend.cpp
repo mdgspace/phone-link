@@ -1,5 +1,6 @@
 #include "backend.h"
 #include <QThread>
+#include <QDebug>
 
 Backend::Backend(QObject *parent)
     : QObject(parent)
@@ -7,31 +8,18 @@ Backend::Backend(QObject *parent)
     qDebug() << "[Backend] constructor";
     qDebug() << "[Backend] thread:" << QThread::currentThread();
 
-    // mDNS
+    // Start mDNS subsystem
     m_mdnsManager.start();
-
-    connect(&m_mdnsManager,
-            &MdnsManager::deviceDiscovered,
-            this,
-            &Backend::onDeviceDiscovered,
-            Qt::QueuedConnection);
-
-    // TCP
-    if (!m_tcpServer.start()) {
-        // QTcpServer and QTcpSocket are non-blocking, use Qt's event loop and are safe on the main thread
-        qWarning() << "Failed to start TCP server";
-    }
 }
 
+
+// ======================
 // Getters
+// ======================
+
 QString Backend::deviceName() const
 {
     return m_deviceName;
-}
-
-DiscoveryList* Backend::discoveryList()
-{
-    return &m_discoveryList;
 }
 
 bool Backend::isRegistering() const
@@ -39,17 +27,21 @@ bool Backend::isRegistering() const
     return m_registering;
 }
 
-bool Backend::isDiscovering() const
-{ return m_discovering; }
+bool Backend::isServerRunning() const
+{
+    return m_serverRunning;
+}
 
+
+// ======================
+// Device name
+// ======================
 
 void Backend::setDeviceName(const QString &name)
 {
-    // Avoid unnecessary work
     if (name == m_deviceName)
         return;
 
-    // Very light sanity check (optional but good)
     if (name.trimmed().isEmpty())
         return;
 
@@ -57,29 +49,44 @@ void Backend::setDeviceName(const QString &name)
     emit deviceNameChanged();
 }
 
-void Backend::startDiscovery()
+
+// ======================
+// TCP Server Control
+// ======================
+
+void Backend::startTcpServer()
 {
-    if (m_discovering)
+    if (m_serverRunning)
         return;
 
-    m_discovering = true;
-    emit discoveringChanged();
+    if (!m_tcpServer.start(m_port)) {
+        qWarning() << "Failed to start TCP server";
+        return;
+    }
 
-    m_mdnsManager.startDiscovery();
+    m_serverRunning = true;
+    emit serverRunningChanged();
+
+    qDebug() << "TCP server started";
+}
+
+void Backend::stopTcpServer()
+{
+    if (!m_serverRunning)
+        return;
+
+    m_tcpServer.stop();
+
+    m_serverRunning = false;
+    emit serverRunningChanged();
+
+    qDebug() << "TCP server stopped";
 }
 
 
-void Backend::stopDiscovery()
-{
-    if (!m_discovering)
-        return;
-
-    m_discovering = false;
-    emit discoveringChanged();
-
-    m_mdnsManager.stopDiscovery();
-}
-
+// ======================
+// mDNS Registration
+// ======================
 
 void Backend::registerOnMdns()
 {
@@ -101,25 +108,9 @@ void Backend::stopRegistration()
     if (!m_registering)
         return;
 
+    // If you later add this in MdnsManager:
     // m_mdnsManager.stopRegistration();
 
     m_registering = false;
     emit registeringChanged();
 }
-
-
-// const means that this function will not modify the caller's variables
-void Backend::onDeviceDiscovered(const QString &name,
-                                 const QString &address,
-                                 const QString &service,
-                                 quint16 port)
-{
-    qDebug() << "[UI THREAD]" << QThread::currentThread();
-
-    qDebug() << "[Backend] device discovered:"
-             << name << address << port;
-
-    m_discoveryList.addDevice(name, address, service, port);
-}
-
-

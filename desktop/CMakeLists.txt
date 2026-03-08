@@ -30,7 +30,7 @@ qt_add_qml_module(app_phone_link
         qml/layout/NavigationBar.qml
 
         qml/pages/connection/ConnectedPage.qml
-        qml/pages/connection/DiscoveryPage.qml
+        qml/pages/connection/ServerControlPage.qml
         qml/pages/connection/RegistrationPage.qml
 
         qml/pages/shared/UnreadMessagesPage.qml

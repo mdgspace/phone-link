@@ -13,7 +13,8 @@ class TcpServer : public QObject
 
 public:
     explicit TcpServer(QObject *parent = nullptr);
-    bool start();
+    bool start(quint16 port);
+    void stop();
 
 private slots:
     void onNewConnection();

@@ -16,68 +16,92 @@ class MdnsDiscoveryController extends ChangeNotifier {
 
   /// Returns a list of processed [DiscoveredDevice] objects
   List<DiscoveredDevice> get devices {
-    return _rawServices
-        .map((service) {
-          // 1. Find the first IPv4 address
-          final ipv4Address = service.addresses?.firstWhere(
-            (addr) => addr.type == InternetAddressType.IPv4,
-            orElse: () => InternetAddress('0.0.0.0'), // Fallback
-          );
+    return _rawServices.map((service) {
+      // Find IPv4 address safely
+      final ipv4Address = service.addresses
+          ?.where((addr) => addr.type == InternetAddressType.IPv4)
+          .firstOrNull;
 
-          // 2. Convert TXT records from Map<String, Uint8List?> to Map<String, String>
-          final Map<String, String> cleanTxt = {};
-          service.txt?.forEach((key, value) {
-            if (value != null) {
-              cleanTxt[key] = String.fromCharCodes(value);
-            }
-          });
+      // Convert TXT records safely
+      final Map<String, String> cleanTxt = {};
+      service.txt?.forEach((key, value) {
+        if (value != null) {
+          cleanTxt[key] = utf8.decode(value);
+        }
+      });
 
-          return DiscoveredDevice(
-            instanceName: service.name ?? 'Unknown',
-            // In mDNS, the 'name' is often the human-readable device name
-            deviceName: service.name ?? 'Unknown Device',
-            ipv4: ipv4Address ?? InternetAddress('0.0.0.0'),
-            port: service.port ?? 0,
-            txt: cleanTxt,
-            connected: _activeConnections.containsKey(ipv4Address?.address),
-          );
-        })
-        .where((device) => device.port != 0)
-        .toList();
-    // Filter out invalid devices that haven't fully resolved yet
+      final ip = ipv4Address?.address ?? "0.0.0.0";
+      final port = service.port ?? 0;
+
+      return DiscoveredDevice(
+        instanceName: service.name ?? 'Unknown',
+        deviceName: cleanTxt["name"] ?? service.name ?? "Unknown Device",
+        ipv4: ipv4Address ?? InternetAddress("0.0.0.0"),
+        port: port,
+        txt: cleanTxt,
+        connected: _activeConnections.containsKey("$ip:$port"),
+      );
+    }).toList();
   }
 
   Future<void> connectToDevice(DiscoveredDevice device) async {
-    if (_activeConnections.containsKey(device.ipv4.address)) return;
+    final key = "${device.ipv4.address}:${device.port}";
+
+    if (_activeConnections.containsKey(key)) return;
 
     try {
-      final socket = await Socket.connect(device.ipv4, device.port,
-          timeout: const Duration(seconds: 5));
+      final socket = await Socket.connect(
+        device.ipv4.address,
+        device.port,
+        timeout: const Duration(seconds: 5),
+      );
 
-      _activeConnections[device.ipv4.address] = socket;
+      socket.setOption(SocketOption.tcpNoDelay, true);
 
-      // Listen for data or disconnectes
+      _activeConnections[key] = socket;
+
+      debugPrint("Connected to ${device.deviceName}");
+
       socket.listen(
         (data) => _handleIncomingData(device, data),
-        onError: (e) => disconnectFromDevice(device),
-        onDone: () => disconnectFromDevice(device),
+        onError: (e) {
+          debugPrint("Socket error: $e");
+          disconnectFromDevice(device);
+        },
+        onDone: () {
+          debugPrint("Disconnected from ${device.deviceName}");
+          disconnectFromDevice(device);
+        },
       );
 
       notifyListeners();
     } catch (e) {
-      debugPrint("Connection failed to ${device.deviceName} : $e");
+      debugPrint("Connection failed to ${device.deviceName}: $e");
     }
   }
 
   Future<void> disconnectFromDevice(DiscoveredDevice device) async {
-    final socket = _activeConnections.remove(device.ipv4.address);
+    final key = "${device.ipv4.address}:${device.port}";
+
+    final socket = _activeConnections.remove(key);
+
     await socket?.close();
+
     notifyListeners();
   }
 
   void _handleIncomingData(DiscoveredDevice device, List<int> data) {
     final message = utf8.decode(data);
-    debugPrint("Message from ${device.deviceName} : $message");
+
+    debugPrint("Message from ${device.deviceName}: $message");
+
+    // Example: JSON protocol
+    try {
+      final decoded = jsonDecode(message);
+      debugPrint("Parsed message: $decoded");
+    } catch (_) {
+      // ignore if not JSON
+    }
   }
 
   Future<void> start() async {
