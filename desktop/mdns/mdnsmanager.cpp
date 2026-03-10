@@ -158,34 +158,34 @@ void MdnsManager::registerService(const QString &name,
 }
 
 
-// In MdnsManager.cpp
-void MdnsManager::startDiscovery()
-{
-    // Hardcode for testing to ensure it's not empty
-    const char* type = "_phonelink._tcp";
+// // In MdnsManager.cpp
+// void MdnsManager::startDiscovery()
+// {
+//     // Hardcode for testing to ensure it's not empty
+//     const char* type = "_phonelink._tcp";
 
-    m_browser = avahi_service_browser_new(
-        m_client,
-        AVAHI_IF_UNSPEC,
-        AVAHI_PROTO_UNSPEC,
-        type, // Use the hardcoded string
-        nullptr,
-        static_cast<AvahiLookupFlags>(0),
-        &MdnsManager::browseCallback,
-        this
-        );
-}
+//     m_browser = avahi_service_browser_new(
+//         m_client,
+//         AVAHI_IF_UNSPEC,
+//         AVAHI_PROTO_UNSPEC,
+//         type, // Use the hardcoded string
+//         nullptr,
+//         static_cast<AvahiLookupFlags>(0),
+//         &MdnsManager::browseCallback,
+//         this
+//         );
+// }
 
-void MdnsManager::stopDiscovery()
-{
-    if (!m_browser)
-        return;
+// void MdnsManager::stopDiscovery()
+// {
+//     if (!m_browser)
+//         return;
 
-    avahi_service_browser_free(m_browser);
-    m_browser = nullptr;
+//     avahi_service_browser_free(m_browser);
+//     m_browser = nullptr;
 
-    qDebug() << "[mDNS] discovery stopped";
-}
+//     qDebug() << "[mDNS] discovery stopped";
+// }
 
 void MdnsManager::browseCallback(AvahiServiceBrowser *,
                                  AvahiIfIndex interface,

@@ -41,13 +41,19 @@ qt_add_qml_module(app_phone_link
         qml/widgets/FileWidget.qml
         qml/widgets/MessageWidget.qml
 
-        SOURCES
-        SOURCES
         SOURCES mdns/mdnsmanager.h mdns/mdnsmanager.cpp
-        SOURCES
         SOURCES mdns/discoverylist.h mdns/discoverylist.cpp
         SOURCES core/backend.h core/backend.cpp
         SOURCES tcp/tcpserver.h tcp/tcpserver.cpp
+        SOURCES protocol/message.h   protocol/protocoltypes.h
+        SOURCES
+        SOURCES protocol/messageparser.h protocol/messageparser.cpp
+        SOURCES protocol/messagerouter.h protocol/messagerouter.cpp
+        SOURCES features/clipboard/clipboardhandler.h features/clipboard/clipboardhandler.cpp
+        SOURCES features/filetransfer/filetransferhandler.h features/filetransfer/filetransferhandler.cpp
+        SOURCES features/messaging/messaginghandler.h features/messaging/messaginghandler.cpp
+        SOURCES features/system/systemhandler.h features/system/systemhandler.cpp
+        SOURCES features/clipboard/clipboardmodel.h features/clipboard/clipboardmodel.cpp
 )
 
 set_source_files_properties(

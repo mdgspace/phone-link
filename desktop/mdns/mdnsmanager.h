@@ -22,8 +22,8 @@ public:
                          const QString &serviceType,
                          quint16 port);
 
-    void startDiscovery();
-    void stopDiscovery();
+    // void startDiscovery();
+    // void stopDiscovery();
     void start();
     void stop();
 

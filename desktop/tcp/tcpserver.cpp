@@ -97,6 +97,8 @@ void TcpServer::onClientReadyRead()
         } else {
             client->write("ECHO: " + line + "\n");
         }
+
+        emit messageReceived(client, line);
     }
 }
 

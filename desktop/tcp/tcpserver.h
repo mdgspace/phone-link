@@ -27,6 +27,7 @@ private:
     QHash<QTcpSocket*, QByteArray> m_buffers;   // per client receive buffers
 
 signals:
+    void messageReceived(QTcpSocket *client, const QByteArray &data);
 };
 
 #endif // TCPSERVER_H

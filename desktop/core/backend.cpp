@@ -1,4 +1,5 @@
 #include "backend.h"
+#include "../protocol/messageparser.h"
 #include <QThread>
 #include <QDebug>
 
@@ -7,6 +8,22 @@ Backend::Backend(QObject *parent)
 {
     qDebug() << "[Backend] constructor";
     qDebug() << "[Backend] thread:" << QThread::currentThread();
+
+    // connect signals and slots
+    connect(&m_clipboardHandler,
+            &ClipboardHandler::clipboardReceived,
+            this,
+            &Backend::onClipboardReceived);
+
+    connect(&m_messageHandler,
+            &MessagingHandler::messageReceived,
+            this,
+            &Backend::onMessageReceived);
+
+    connect(&m_fileHandler,
+            &FileTransferHandler::fileReceived,
+            this,
+            &Backend::onFileReceived);
 
     // Start mDNS subsystem
     m_mdnsManager.start();
@@ -113,4 +130,30 @@ void Backend::stopRegistration()
 
     m_registering = false;
     emit registeringChanged();
+}
+
+
+// ======================
+// Router
+// ======================
+
+void Backend::handleIncomingMessage(QTcpSocket *client, const QByteArray &data)
+{
+    Message msg = MessageParser::parse(data);
+    m_router.route(msg);
+}
+
+void Backend::onClipboardReceived(const QString &text)
+{
+    m_clipboardModel.addClipboard(text);
+}
+
+void Backend::onMessageReceived(const QString &sender, const QString &text)
+{
+    m_messageModel.addMessage(sender, text);
+}
+
+void Backend::onFileReceived(const QString &path)
+{
+    m_sharedFilesModel.addFile(path);
 }
