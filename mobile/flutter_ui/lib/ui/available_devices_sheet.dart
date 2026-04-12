@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ui/data/discovered_device.dart';
-import 'package:flutter_ui/services/mdns_discovery.dart';
 import 'package:provider/provider.dart';
+
+import '../data/discovered_device.dart';
+import '../services/connection_manager.dart';
+import '../services/mdns_discovery.dart';
 
 void showAvailableDevicesSheet(BuildContext context) {
   showModalBottomSheet(
@@ -19,13 +21,12 @@ void showAvailableDevicesSheet(BuildContext context) {
             return Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
+                borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: Column(
                 children: [
-                  // ───── drag handle ─────
+                  // ── drag handle ──
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Container(
@@ -37,51 +38,32 @@ void showAvailableDevicesSheet(BuildContext context) {
                       ),
                     ),
                   ),
-
-                  // ───── title ─────
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
+                    padding: EdgeInsets.only(bottom: 8),
                     child: Text(
-                      "Available Devices",
+                      'Available Devices',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
+                          fontSize: 18, fontWeight: FontWeight.w600),
                     ),
                   ),
-
                   const Divider(height: 1),
-
-                  SizedBox(height: 3),
-
-                  // ───── scrollable content ─────
                   Expanded(
                     child: Consumer<MdnsDiscoveryController>(
-                      builder: (context, controller, _) {
-                        final services = controller.devices;
-
-                        if (!controller.isRunning) {
+                      builder: (context, discovery, _) {
+                        if (!discovery.isRunning) {
                           return const Center(
-                            child: Text("Starting discovery..."),
-                          );
+                              child: Text('Starting discovery...'));
                         }
-
-                        if (services.isEmpty) {
+                        if (discovery.devices.isEmpty) {
                           return const Center(
-                            child: Text("No devices found"),
-                          );
+                              child: Text('No devices found'));
                         }
-
                         return ListView.builder(
                           controller: scrollController,
-                          itemCount: services.length,
-                          itemBuilder: (context, index) {
-                            final service = services[index];
-
-                            return deviceContainer(
-                              device: service,
-                              controller: controller,
-                            );
+                          itemCount: discovery.devices.length,
+                          itemBuilder: (context, i) {
+                            final device = discovery.devices[i];
+                            return _DeviceTile(device: device);
                           },
                         );
                       },
@@ -97,83 +79,51 @@ void showAvailableDevicesSheet(BuildContext context) {
   );
 }
 
-Widget deviceContainer({
-  required DiscoveredDevice device,
-  required MdnsDiscoveryController controller,
-}) {
-  print("Device name: ${device.deviceName}");
-  print("IP: ${device.ipv4}");
-  print("Port: ${device.port}");
-  print("Instance: ${device.instanceName}");
+class _DeviceTile extends StatelessWidget {
+  final DiscoveredDevice device;
+  const _DeviceTile({required this.device});
 
-  return GestureDetector(
-    onTap: () {
-      if (device.connected) {
-        controller.disconnectFromDevice(device);
-      } else {
-        controller.connectToDevice(device);
-      }
-    },
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+  @override
+  Widget build(BuildContext context) {
+    final connection = context.read<ConnectionManager>();
+
+    return GestureDetector(
+      onTap: () {
+        connection.connectTo(device);
+        Navigator.pop(context);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          device.deviceName,
-                          style: TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          "Device ID : ${device.instanceName}",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
-                          ),
-                          textAlign: TextAlign.left,
-                        ),
-                        Text(
-                          "IPv4 Address : ${device.ipv4.toString()}",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
-                          ),
-                          textAlign: TextAlign.left,
-                        ),
-                        Text(
-                          "Port : ${device.port}",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
-                          ),
-                          textAlign: TextAlign.left,
-                        ),
-                      ],
+              Icon(Icons.computer, color: Colors.grey.shade600),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(device.deviceName,
+                        style: const TextStyle(fontSize: 15)),
+                    Text(
+                      '${device.ipv4.address} : ${device.port}',
+                      style: TextStyle(
+                          fontSize: 12, color: Colors.grey.shade600),
                     ),
-                  ),
-                  device.connected
-                      ? Icon(Icons.circle, color: Colors.grey.shade300)
-                      : Icon(Icons.circle_outlined, color: Colors.grey.shade300)
-                ],
-              )
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
             ],
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
