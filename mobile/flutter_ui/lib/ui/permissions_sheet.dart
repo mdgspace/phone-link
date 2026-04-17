@@ -1,120 +1,112 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../services/notification_service.dart';
+import '../services/sms_service.dart';
 
 void showPermissionsSheet(BuildContext context) {
-  final List<PermissionItem> permissions = [
-    PermissionItem(
-      name: "SMS",
-      description: "Read and send SMS messages",
-      enabled: true,
-    ),
-    PermissionItem(
-      name: "Clipboard Sharing",
-      description: "Sync clipboard between devices",
-    ),
-    PermissionItem(
-      name: "File Sharing",
-      description: "Send and receive files",
-    ),
-  ];
-
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) {
-      return DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.45,
-        minChildSize: 0.3,
-        maxChildSize: 0.85,
-        builder: (context, scrollController) {
-          return Material(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
-            ),
-            child: Column(
+    builder: (_) => _PermissionsSheet(),
+  );
+}
+
+class _PermissionsSheet extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                // ───── drag handle ─────
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-
-                const Text(
-                  "Permissions",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-                const Divider(height: 1),
-                const SizedBox(height: 3),
-
-                // ───── permissions list ─────
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: permissions.length,
-                    itemBuilder: (context, index) {
-                      return permissionTile(permissions[index]);
-                    },
-                  ),
+                const Text('Permissions',
+                    style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w600)),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
-          );
-        },
-      );
-    },
-  );
+            const Divider(),
+            const SizedBox(height: 4),
+            _PermRow(
+              icon: Icons.message,
+              title: 'SMS',
+              subtitle: 'Read and send text messages',
+              onGrant: () => context.read<SmsService>().requestPermission(),
+            ),
+            const SizedBox(height: 8),
+            _PermRow(
+              icon: Icons.notifications,
+              title: 'Notifications',
+              subtitle: 'Mirror phone notifications to desktop',
+              onGrant: () =>
+                  context.read<NotificationService>().openNotificationSettings(),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class PermissionItem {
-  final String name;
-  final String description;
-  bool enabled;
+class _PermRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onGrant;
 
-  PermissionItem({
-    required this.name,
-    required this.description,
-    this.enabled = false,
+  const _PermRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onGrant,
   });
-}
 
-Widget permissionTile(PermissionItem item) {
-  return StatefulBuilder(
-    builder: (context, setState) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        child: Container(
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: Colors.blue.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: ListTile(
-            title: Text(item.name),
-            subtitle: Text(item.description),
-            trailing: Switch(
-              value: item.enabled,
-              onChanged: (value) {
-                setState(() {
-                  item.enabled = value;
-                });
-              },
-            ),
+          child: Icon(icon, color: Colors.blue.shade700, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
+              Text(subtitle,
+                  style: TextStyle(
+                      color: Colors.grey.shade600, fontSize: 12)),
+            ],
           ),
         ),
-      );
-    },
-  );
+        TextButton(
+          onPressed: onGrant,
+          child: const Text('Grant'),
+        ),
+      ],
+    );
+  }
 }
