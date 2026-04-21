@@ -5,7 +5,7 @@
 - [x] **Permissions Management:** Add logic to request necessary Android permissions (Notification Access, Internet, Local Network).
 - [x] **Network Service Discovery (NSD):** Implement local network scanning using the `nsd` package to discover the Qt desktop application.
 - [x] **Network Communication Client:** Set up a TCP or WebSocket client to securely transmit intercepted notification data to the desktop.
-- [ ] **State Management:** Configure the `provider` package to manage connection status, discovered desktop devices, and active settings.
+- [x] **State Management:** Configure the `provider` package to manage connection status, discovered desktop devices, and active settings.
 - [ ] **UI/UX Implementation:** Replace the default Flutter counter app with the actual Phone-Link dashboard, including connection controls and settings via `shared_preferences`.
 - [ ] **Testing:** Remove the default boilerplate `test/widget_test.dart` and write valid unit/widget tests for the core networking and UI logic.
 
