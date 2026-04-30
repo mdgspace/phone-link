@@ -12,7 +12,7 @@
 ## 💻 Desktop Application (Qt / C++)
 - [x] **Project Setup:** Initialize the C++/Qt project for the desktop host application.
 - [x] **NSD Broadcasting:** Implement a service to broadcast the desktop's presence on the local network so the Flutter app can discover it.
-- [ ] **Socket Server:** Create a TCP or WebSocket server in Qt to listen for incoming connections and notification payloads from the phone.
+- [x] **Socket Server:** Create a TCP or WebSocket server in Qt to listen for incoming connections and notification payloads from the phone.
 - [ ] **Native Desktop Notifications:** Parse incoming notification payloads and display them using Qt's native system tray or notification APIs (`QSystemTrayIcon` / `QNotification`).
 - [ ] **Desktop UI:** Create a system tray menu and a dashboard for managing paired devices and notification preferences.
 
