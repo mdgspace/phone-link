@@ -6,6 +6,7 @@
 #include <QTcpSocket>
 #include <QSet>
 #include <QHash>
+#include "../protocol/message.h"
 
 class TcpServer : public QObject
 {
@@ -27,7 +28,7 @@ private:
     QHash<QTcpSocket*, QByteArray> m_buffers;   // per client receive buffers
 
 signals:
-    void messageReceived(QTcpSocket *client, const QByteArray &data);
+    void messageReceived(QTcpSocket *client, const Message &message);
 };
 
 #endif // TCPSERVER_H

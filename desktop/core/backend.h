@@ -9,9 +9,9 @@
 #include "../tcp/tcpserver.h"
 #include "../protocol/messagerouter.h"
 
-#include "../models/clipboardmodel.h"
-#include "../models/messagemodel.h"
-#include "../models/sharedfilesmodel.h"
+#include "../features/clipboard/clipboardmodel.h"
+#include "../features/filetransfer/sharedfilesmodel.h"
+#include "../features/messaging/messagemodel.h"
 
 class Backend : public QObject
 {
@@ -95,7 +95,8 @@ public:
      * ================================
      */
 
-    void handleIncomingMessage(QTcpSocket *client, const QByteArray &data);
+private slots:
+    void handleIncomingMessage(QTcpSocket *client, const Message &message);
 
 public slots:
     /*

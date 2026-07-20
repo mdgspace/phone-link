@@ -15,10 +15,16 @@ QVariant ClipboardModel::data(const QModelIndex &index, int role) const
     if (!index.isValid())
         return {};
 
-    if (role == TextRole)
-        return m_items[index.row()];
+    const ClipboardItem &item = m_items.at(index.row());
 
-    return {};
+    switch (role)
+    {
+    case TextRole:
+        return item.text;
+
+    default:
+        return {};
+    }
 }
 
 QHash<int, QByteArray> ClipboardModel::roleNames() const
@@ -30,7 +36,12 @@ QHash<int, QByteArray> ClipboardModel::roleNames() const
 
 void ClipboardModel::addClipboard(const QString &text)
 {
-    beginInsertRows({}, m_items.size(), m_items.size());
-    m_items.append(text);
+    beginInsertRows(QModelIndex(), m_items.size(), m_items.size());
+
+    ClipboardItem item;
+    item.text = text;
+
+    m_items.append(item);
+
     endInsertRows();
 }

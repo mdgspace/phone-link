@@ -1,5 +1,6 @@
 #include "tcpserver.h"
 #include "protocol.h"
+#include "../protocol/messageparser.h"
 
 #include <QHostAddress>
 #include <QDebug>
@@ -75,30 +76,39 @@ void TcpServer::onNewConnection()
 void TcpServer::onClientReadyRead()
 {
     auto *client = qobject_cast<QTcpSocket*>(sender());
-    if (!client) return;
+    if (!client)
+        return;
 
-    // Append incoming data to this client's buffer
+    // Append incoming bytes to this client's buffer
     m_buffers[client].append(client->readAll());
 
-    // Line based protocol
+    // Process complete newline-delimited messages
     while (true) {
         int newlineIndex = m_buffers[client].indexOf('\n');
-        if (newlineIndex == -1) break;
+        if (newlineIndex == -1)
+            break;
 
-        QByteArray line = m_buffers[client].left(newlineIndex);
+        QByteArray line = m_buffers[client].left(newlineIndex).trimmed();
         m_buffers[client].remove(0, newlineIndex + 1);
 
-        qDebug() << "From" << client->peerAddress().toString()
-                 << " : " << line;
+        if (line.isEmpty())
+            continue;
 
-        // Protocol Handling
-        if (line == Protocol::PING) {
-            client->write("PONG\n");
-        } else {
-            client->write("ECHO: " + line + "\n");
+        qDebug() << "Received from"
+                 << client->peerAddress().toString()
+                 << ":" << line;
+
+        try {
+            Message msg = MessageParser::parse(line);
+            if (msg.type.isEmpty()) {
+                qWarning() << "Invalid packet:" << line;
+                continue;
+            }
+
+            emit messageReceived(client, msg);
+        } catch (const std::exception &e) {
+            qWarning() << "Failed to parse message:" << e.what();
         }
-
-        emit messageReceived(client, line);
     }
 }
 

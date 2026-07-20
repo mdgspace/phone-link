@@ -9,11 +9,28 @@ MessagingHandler::MessagingHandler(QObject *parent)
 
 void MessagingHandler::handle(const Message &msg)
 {
-    QString text = msg.payload["text"].toString();
-    QString sender = msg.payload["sender"].toString();
+    if (!msg.payload.contains("id") ||
+        !msg.payload.contains("address") ||
+        !msg.payload.contains("body") ||
+        !msg.payload.contains("isIncoming") ||
+        !msg.payload.contains("timestamp"))
+    {
+        qWarning() << "[Messaging] Invalid message packet";
+        return;
+    }
 
-    qDebug() << "[Message] From:" << sender;
-    qDebug() << "[Message] Content:" << text;
+    QString id = msg.payload.value("id").toString();
+    QString address = msg.payload.value("address").toString();
+    QString body = msg.payload.value("body").toString();
+    bool isIncoming = msg.payload.value("isIncoming").toBool();
+    qint64 timestamp = msg.payload.value("timestamp").toInteger();
 
-    emit messageReceived(sender, text);
+    qDebug() << "[Messaging] Address:" << address;
+    qDebug() << "[Messaging] Body:" << body;
+
+    emit messageReceived(id,
+                         address,
+                         body,
+                         isIncoming,
+                         timestamp);
 }

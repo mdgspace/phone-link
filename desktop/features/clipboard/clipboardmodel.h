@@ -4,13 +4,18 @@
 #include <QAbstractListModel>
 #include <QObject>
 
+struct ClipboardItem
+{
+    QString text;
+};
 
 class ClipboardModel : public QAbstractListModel
 {
     Q_OBJECT
 
 public:
-    enum Roles {
+    enum Roles
+    {
         TextRole = Qt::UserRole + 1
     };
 
@@ -18,13 +23,12 @@ public:
 
     int rowCount(const QModelIndex &parent) const override;
     QVariant data(const QModelIndex &index, int role) const override;
-
     QHash<int, QByteArray> roleNames() const override;
 
     void addClipboard(const QString &text);
 
 private:
-    QStringList m_items;
+    QList<ClipboardItem> m_items;
 };
 
 #endif // CLIPBOARDMODEL_H

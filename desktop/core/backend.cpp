@@ -1,5 +1,4 @@
 #include "backend.h"
-#include "../protocol/messageparser.h"
 #include <QThread>
 #include <QDebug>
 
@@ -10,6 +9,11 @@ Backend::Backend(QObject *parent)
     qDebug() << "[Backend] thread:" << QThread::currentThread();
 
     // connect signals and slots
+    connect(&m_tcpServer,
+            &TcpServer::messageReceived,
+            this,
+            &Backend::handleIncomingMessage);
+
     connect(&m_clipboardHandler,
             &ClipboardHandler::clipboardReceived,
             this,
@@ -137,9 +141,9 @@ void Backend::stopRegistration()
 // Router
 // ======================
 
-void Backend::handleIncomingMessage(QTcpSocket *client, const QByteArray &data)
+void Backend::handleIncomingMessage(QTcpSocket *client, const Message &msg)
 {
-    Message msg = MessageParser::parse(data);
+    Q_UNUSED(client);
     m_router.route(msg);
 }
 

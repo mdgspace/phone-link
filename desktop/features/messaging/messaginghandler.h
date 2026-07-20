@@ -1,7 +1,8 @@
 #ifndef MESSAGINGHANDLER_H
 #define MESSAGINGHANDLER_H
 
-#include "protocol/message.h"
+#include <QObject>
+#include "../../protocol/message.h"
 
 class MessagingHandler : public QObject
 {
@@ -13,7 +14,11 @@ public:
     void handle(const Message &msg);
 
 signals:
-    void messageReceived(const QString &sender, const QString &text);
+    void messageReceived(const QString &id,
+                         const QString &address,
+                         const QString &body,
+                         bool isIncoming,
+                         qint64 timestamp);
 };
 
 #endif // MESSAGINGHANDLER_H

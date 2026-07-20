@@ -20,6 +20,7 @@ qt_add_executable(app_phone_link
 
 qt_add_qml_module(app_phone_link
     URI com.phonelink
+
     QML_FILES
         qml/theme/Colors.qml
 
@@ -33,6 +34,7 @@ qt_add_qml_module(app_phone_link
         qml/pages/connection/ServerControlPage.qml
         qml/pages/connection/RegistrationPage.qml
 
+        qml/pages/shared/SharedContentPage.qml
         qml/pages/shared/UnreadMessagesPage.qml
         qml/pages/shared/ClipboardItemsPage.qml
         qml/pages/shared/SharedFilesPage.qml
@@ -41,19 +43,48 @@ qt_add_qml_module(app_phone_link
         qml/widgets/FileWidget.qml
         qml/widgets/MessageWidget.qml
 
-        SOURCES mdns/mdnsmanager.h mdns/mdnsmanager.cpp
-        SOURCES mdns/discoverylist.h mdns/discoverylist.cpp
-        SOURCES core/backend.h core/backend.cpp
-        SOURCES tcp/tcpserver.h tcp/tcpserver.cpp
-        SOURCES protocol/message.h   protocol/protocoltypes.h
-        SOURCES
-        SOURCES protocol/messageparser.h protocol/messageparser.cpp
-        SOURCES protocol/messagerouter.h protocol/messagerouter.cpp
-        SOURCES features/clipboard/clipboardhandler.h features/clipboard/clipboardhandler.cpp
-        SOURCES features/filetransfer/filetransferhandler.h features/filetransfer/filetransferhandler.cpp
-        SOURCES features/messaging/messaginghandler.h features/messaging/messaginghandler.cpp
-        SOURCES features/system/systemhandler.h features/system/systemhandler.cpp
-        SOURCES features/clipboard/clipboardmodel.h features/clipboard/clipboardmodel.cpp
+    SOURCES
+        mdns/mdnsmanager.h
+        mdns/mdnsmanager.cpp
+
+        mdns/discoverylist.h
+        mdns/discoverylist.cpp
+
+        core/backend.h
+        core/backend.cpp
+
+        tcp/tcpserver.h
+        tcp/tcpserver.cpp
+
+        protocol/message.h
+        protocol/protocoltypes.h
+
+        protocol/messageparser.h
+        protocol/messageparser.cpp
+
+        protocol/messagerouter.h
+        protocol/messagerouter.cpp
+
+        features/clipboard/clipboardhandler.h
+        features/clipboard/clipboardhandler.cpp
+
+        features/filetransfer/filetransferhandler.h
+        features/filetransfer/filetransferhandler.cpp
+
+        features/messaging/messaginghandler.h
+        features/messaging/messaginghandler.cpp
+
+        features/system/systemhandler.h
+        features/system/systemhandler.cpp
+
+        features/clipboard/clipboardmodel.h
+        features/clipboard/clipboardmodel.cpp
+
+        features/messaging/messagemodel.h
+        features/messaging/messagemodel.cpp
+
+        features/filetransfer/sharedfilesmodel.h
+        features/filetransfer/sharedfilesmodel.cpp
 )
 
 set_source_files_properties(

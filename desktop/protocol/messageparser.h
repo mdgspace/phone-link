@@ -1,5 +1,6 @@
 #ifndef MESSAGEPARSER_H
 #define MESSAGEPARSER_H
+
 #include "message.h"
 #include <QByteArray>
 

@@ -3,6 +3,8 @@
 #include "../../protocol/protocoltypes.h"
 
 #include <QDebug>
+#include <QDir>
+#include <QJsonArray>
 #include <QStandardPaths>
 
 FileTransferHandler::FileTransferHandler(QObject *parent)
@@ -12,38 +14,64 @@ FileTransferHandler::FileTransferHandler(QObject *parent)
 
 void FileTransferHandler::handle(const Message &msg)
 {
-    if (msg.type == ProtocolTypes::FILE_START)
+    if (msg.type == ProtocolTypes::FILE_OFFER)
     {
-        QString fileName = msg.payload["name"].toString();
+        if (!msg.payload.contains("transfer_id") ||
+            !msg.payload.contains("file_name") ||
+            !msg.payload.contains("total_bytes"))
+        {
+            qWarning() << "[FileTransfer] Invalid file offer.";
+            return;
+        }
+
+        m_transferId = msg.payload["transfer_id"].toString();
+        m_fileName = msg.payload["file_name"].toString();
+        m_totalBytes = msg.payload["total_bytes"].toInteger();
 
         QString path =
             QStandardPaths::writableLocation(QStandardPaths::DownloadLocation)
-            + "/" + fileName;
+            + "/" + m_fileName;
 
         m_currentFile.setFileName(path);
-        int retVal = m_currentFile.open(QIODevice::WriteOnly);
 
-        if (retVal) {
-
+        if (!m_currentFile.open(QIODevice::WriteOnly))
+        {
+            qWarning() << "[FileTransfer] Failed to create"
+                       << path;
+            return;
         }
 
-        qDebug() << "[FileTransfer] Saving to:" << path;
+        qDebug() << "[FileTransfer] Receiving"
+                 << m_fileName;
     }
 
     else if (msg.type == ProtocolTypes::FILE_CHUNK)
     {
-        QByteArray data =
-            QByteArray::fromBase64(msg.payload["data"].toString().toUtf8());
+        if (!m_currentFile.isOpen())
+            return;
 
-        m_currentFile.write(data);
+        QJsonArray array = msg.payload["data"].toArray();
+
+        QByteArray bytes;
+        bytes.reserve(array.size());
+
+        for (const auto &value : array)
+            bytes.append(static_cast<char>(value.toInt()));
+
+        m_currentFile.write(bytes);
     }
 
-    else if (msg.type == ProtocolTypes::FILE_END)
+    else if (msg.type == ProtocolTypes::FILE_DONE)
     {
-        m_currentFile.close();
+        if (m_currentFile.isOpen())
+            m_currentFile.close();
 
-        qDebug() << "[FileTransfer] File saved";
+        qDebug() << "[FileTransfer] Saved:"
+                 << m_currentFile.fileName();
 
-        emit fileReceived(m_currentFile.fileName());
+        emit fileReceived(
+            m_transferId,
+            m_fileName,
+            m_totalBytes);
     }
 }
