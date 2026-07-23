@@ -1,7 +1,10 @@
 #ifndef MESSAGINGHANDLER_H
 #define MESSAGINGHANDLER_H
 
+#pragma once
+
 #include <QObject>
+
 #include "../../protocol/message.h"
 
 class MessagingHandler : public QObject

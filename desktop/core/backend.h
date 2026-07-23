@@ -114,8 +114,8 @@ public slots:
      */
 
     void onClipboardReceived(const QString &text);
-    void onMessageReceived(const QString &sender, const QString &text);
-    void onFileReceived(const QString &path);
+    void onMessageReceived(const QString &id, const QString &address, const QString &body, bool isIncoming, qint64 timestamp);
+    void onFileReceived(const QString &transferId, const QString &fileName, qint64 totalBytes);
 
 signals:
     /*
@@ -158,16 +158,6 @@ private:
      */
 
     MessageRouter m_router;
-
-    /*
-     * ================================
-     * UI DATA MODELS
-     * ================================
-     */
-
-    ClipboardModel m_clipboardModel;
-    MessageModel m_messageModel;
-    SharedFilesModel m_sharedFilesModel;
 };
 
 #endif // BACKEND_H

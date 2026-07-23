@@ -73,6 +73,7 @@ void TcpServer::onNewConnection()
     }
 }
 
+// read bytes - split into complete packets - parse the packet - emit the parsed message
 void TcpServer::onClientReadyRead()
 {
     auto *client = qobject_cast<QTcpSocket*>(sender());
@@ -98,17 +99,13 @@ void TcpServer::onClientReadyRead()
                  << client->peerAddress().toString()
                  << ":" << line;
 
-        try {
-            Message msg = MessageParser::parse(line);
-            if (msg.type.isEmpty()) {
-                qWarning() << "Invalid packet:" << line;
-                continue;
-            }
-
-            emit messageReceived(client, msg);
-        } catch (const std::exception &e) {
-            qWarning() << "Failed to parse message:" << e.what();
+        Message msg = MessageParser::parse(line);
+        if (msg.type.isEmpty()) {
+            qWarning() << "Invalid packet:" << line;
+            continue;
         }
+
+        emit messageReceived(client, msg);
     }
 }
 

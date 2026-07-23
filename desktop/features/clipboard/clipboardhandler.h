@@ -1,7 +1,10 @@
 #ifndef CLIPBOARDHANDLER_H
 #define CLIPBOARDHANDLER_H
 
+#pragma once
+
 #include <QObject>
+
 #include "../../protocol/message.h"
 
 class ClipboardHandler : public QObject

@@ -1,8 +1,11 @@
 #ifndef FILETRANSFERHANDLER_H
 #define FILETRANSFERHANDLER_H
 
+#pragma once
+
 #include <QObject>
 #include <QFile>
+
 #include "../../protocol/message.h"
 
 class FileTransferHandler : public QObject
@@ -19,12 +22,16 @@ signals:
                       const QString &fileName,
                       qint64 totalBytes);
 
-private:
-    QFile m_currentFile;
+    void fileTransferAccepted(const QString &transferId);
 
+    void fileTransferRejected(const QString &transferId);
+
+private:
     QString m_transferId;
     QString m_fileName;
     qint64 m_totalBytes = 0;
+
+    QFile m_currentFile;
 };
 
 #endif // FILETRANSFERHANDLER_H

@@ -13,6 +13,11 @@
 class MessageRouter
 {
 public:
+    ClipboardHandler* clipboardHandler() { return &m_clipboardHandler; }
+    MessagingHandler* messagingHandler() { return &m_messageHandler; }
+    FileTransferHandler* fileHandler() { return &m_fileHandler; }
+    SystemHandler* systemHandler() { return m_systemHandler; }
+
     void route(const Message &msg);
 
 private:

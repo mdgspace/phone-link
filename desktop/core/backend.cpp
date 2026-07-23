@@ -14,17 +14,17 @@ Backend::Backend(QObject *parent)
             this,
             &Backend::handleIncomingMessage);
 
-    connect(&m_clipboardHandler,
+    connect(m_router.clipboardHandler(),
             &ClipboardHandler::clipboardReceived,
             this,
             &Backend::onClipboardReceived);
 
-    connect(&m_messageHandler,
+    connect(m_router.messagingHandler(),
             &MessagingHandler::messageReceived,
             this,
             &Backend::onMessageReceived);
 
-    connect(&m_fileHandler,
+    connect(m_router.fileHandler(),
             &FileTransferHandler::fileReceived,
             this,
             &Backend::onFileReceived);
@@ -152,12 +152,16 @@ void Backend::onClipboardReceived(const QString &text)
     m_clipboardModel.addClipboard(text);
 }
 
-void Backend::onMessageReceived(const QString &sender, const QString &text)
+void Backend::onMessageReceived(const QString &id,
+                                const QString &address,
+                                const QString &body,
+                                bool isIncoming,
+                                qint64 timestamp)
 {
-    m_messageModel.addMessage(sender, text);
+    m_messageModel.addMessage(id, address, body, isIncoming, timestamp);
 }
 
-void Backend::onFileReceived(const QString &path)
+void Backend::onFileReceived(const QString &transferId, const QString &fileName, qint64 totalBytes)
 {
-    m_sharedFilesModel.addFile(path);
+    m_sharedFilesModel.addFile(transferId, fileName, totalBytes);
 }
