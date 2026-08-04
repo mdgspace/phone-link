@@ -1,6 +1,10 @@
 #include "backend.h"
 #include <QThread>
 #include <QDebug>
+#include <QSettings>
+#include <QRandomGenerator>
+#include "../protocol/protocoltypes.h"
+#include "../protocol/messageparser.h"
 
 Backend::Backend(QObject *parent)
     : QObject(parent)
@@ -28,6 +32,37 @@ Backend::Backend(QObject *parent)
             &FileTransferHandler::fileReceived,
             this,
             &Backend::onFileReceived);
+
+    // SystemHandler -> Backend
+    connect(
+        m_router.systemHandler(),
+        &SystemHandler::helloReceived,
+        this,
+        &Backend::onHelloReceived);
+
+    connect(
+        m_router.systemHandler(),
+        &SystemHandler::pairingRequested,
+        this,
+        &Backend::onPairingRequested);
+
+    connect(
+        m_router.systemHandler(),
+        &SystemHandler::disconnected,
+        this,
+        &Backend::onDisconnected);
+
+    connect(
+        m_router.systemHandler(),
+        &SystemHandler::pairingAccepted,
+        this,
+        &Backend::onPairingAcceptedFromPhone);
+
+    connect(
+        m_router.notificationHandler(),
+        &NotificationHandler::notificationPosted,
+        this,
+        &Backend::onNotificationPosted);
 
     // Start mDNS subsystem
     m_mdnsManager.start();
@@ -143,8 +178,8 @@ void Backend::stopRegistration()
 
 void Backend::handleIncomingMessage(QTcpSocket *client, const Message &msg)
 {
-    Q_UNUSED(client);
-    m_router.route(msg);
+    m_activeClient = client;
+    m_router.route(client, msg);
 }
 
 void Backend::onClipboardReceived(const QString &text)
@@ -164,4 +199,130 @@ void Backend::onMessageReceived(const QString &id,
 void Backend::onFileReceived(const QString &transferId, const QString &fileName, qint64 totalBytes)
 {
     m_sharedFilesModel.addFile(transferId, fileName, totalBytes);
+}
+
+// ======================
+// System / Pairing
+// ======================
+
+void Backend::onHelloReceived(const QString &deviceId, const QString &deviceName)
+{
+    m_recentDeviceNames[deviceId] = deviceName;
+    qDebug() << "[Backend] Hello from" << deviceName << "(" << deviceId << ")";
+}
+
+void Backend::onPairingRequested(const QString &deviceId)
+{
+    if (!m_activeClient)
+    {
+        qWarning() << "[Backend] Pairing requested with no active client";
+        return;
+    }
+
+    if (isDeviceTrusted(deviceId))
+    {
+        // Already trusted: skip the PIN dance and accept immediately.
+        QString deviceName = m_recentDeviceNames.value(deviceId, deviceId);
+        m_router.systemHandler()->sendPairingAccepted(
+            m_activeClient, m_deviceName, QSysInfo::productType());
+        return;
+    }
+
+    m_pairingPending = true;
+    m_pairingDeviceId = deviceId;
+    m_pairingDeviceName = m_recentDeviceNames.value(deviceId, deviceId);
+    m_pairingPin = QString::number(QRandomGenerator::global()->bounded(100000, 1000000));
+
+    qDebug() << "[Backend] Pairing PIN for" << m_pairingDeviceName << ":" << m_pairingPin;
+
+    emit pairingPendingChanged();
+}
+
+void Backend::confirmPairing()
+{
+    if (!m_pairingPending || !m_activeClient)
+        return;
+
+    m_router.systemHandler()->sendPairingPin(m_activeClient, m_pairingPin);
+    // Waiting for the phone to echo back pairing_accepted{} (see
+    // onPairingAcceptedFromPhone), which finalizes trust.
+}
+
+void Backend::rejectPairing()
+{
+    if (!m_pairingPending || !m_activeClient)
+        return;
+
+    m_router.systemHandler()->sendPairingRejected(m_activeClient);
+
+    m_pairingPending = false;
+    m_pairingPin.clear();
+    m_pairingDeviceId.clear();
+    m_pairingDeviceName.clear();
+
+    emit pairingPendingChanged();
+}
+
+void Backend::onPairingAcceptedFromPhone()
+{
+    if (!m_pairingPending || !m_activeClient)
+    {
+        qWarning() << "[Backend] pairing_accepted received with no pending pairing";
+        return;
+    }
+
+    trustDevice(m_pairingDeviceId, m_pairingDeviceName);
+
+    m_router.systemHandler()->sendPairingAccepted(
+        m_activeClient, m_deviceName, QSysInfo::productType());
+
+    qDebug() << "[Backend] Paired with" << m_pairingDeviceName;
+
+    m_pairingPending = false;
+    m_pairingPin.clear();
+    m_pairingDeviceId.clear();
+    m_pairingDeviceName.clear();
+
+    emit pairingPendingChanged();
+}
+
+bool Backend::isDeviceTrusted(const QString &deviceId) const
+{
+    QSettings settings;
+    return settings.contains("TrustedDevices/" + deviceId);
+}
+
+void Backend::trustDevice(const QString &deviceId, const QString &deviceName)
+{
+    QSettings settings;
+    settings.setValue("TrustedDevices/" + deviceId, deviceName);
+}
+
+void Backend::onNotificationPosted(const QString &notificationId,
+                                    const QString &appName,
+                                    const QString &title,
+                                    const QString &text)
+{
+    // Native desktop notification display is intentionally out of scope
+    // for now (see tasks.md); just log so the pipeline is verifiable.
+    Q_UNUSED(notificationId);
+    qDebug() << "[Backend] Notification from" << appName << "-" << title << ":" << text;
+}
+
+// Replies
+void Backend::onDisconnected()
+{
+    qDebug()
+    << "[Backend] Phone disconnected";
+
+    if (m_pairingPending)
+    {
+        m_pairingPending = false;
+        m_pairingPin.clear();
+        m_pairingDeviceId.clear();
+        m_pairingDeviceName.clear();
+        emit pairingPendingChanged();
+    }
+
+    m_activeClient = nullptr;
 }

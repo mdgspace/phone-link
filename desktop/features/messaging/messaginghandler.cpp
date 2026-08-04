@@ -3,14 +3,17 @@
 #include "../../protocol/protocoltypes.h"
 
 #include <QDebug>
+#include <QTcpSocket>
 
 MessagingHandler::MessagingHandler(QObject *parent)
     : QObject(parent)
 {
 }
 
-void MessagingHandler::handle(const Message &msg)
+void MessagingHandler::handle(QTcpSocket *client, const Message &msg)
 {
+    Q_UNUSED(client);
+
     // Only handle live SMS packets
     if (msg.type != ProtocolTypes::SMS_SEND &&
         msg.type != ProtocolTypes::SMS_RECEIVED)

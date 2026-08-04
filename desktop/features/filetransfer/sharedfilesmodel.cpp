@@ -1,4 +1,5 @@
 #include "sharedfilesmodel.h"
+#include <QTcpSocket>
 
 SharedFilesModel::SharedFilesModel(QObject *parent)
     : QAbstractListModel(parent)

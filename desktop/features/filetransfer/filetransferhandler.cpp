@@ -1,17 +1,19 @@
 #include "filetransferhandler.h"
 
 #include "../../protocol/protocoltypes.h"
+#include "../../protocol/messageparser.h"
 
 #include <QDebug>
 #include <QJsonArray>
 #include <QStandardPaths>
+#include <QTcpSocket>
 
 FileTransferHandler::FileTransferHandler(QObject *parent)
     : QObject(parent)
 {
 }
 
-void FileTransferHandler::handle(const Message &msg)
+void FileTransferHandler::handle(QTcpSocket *client, const Message &msg)
 {
     if (msg.type == ProtocolTypes::FILE_OFFER)
     {
@@ -23,32 +25,46 @@ void FileTransferHandler::handle(const Message &msg)
             return;
         }
 
-        m_transferId =
+        QString transferId =
             msg.payload.value("transfer_id").toString();
 
-        m_fileName =
+        QString fileName =
             msg.payload.value("file_name").toString();
 
-        m_totalBytes =
+        qint64 totalBytes =
             msg.payload.value("total_bytes").toInteger();
 
         QString path =
             QStandardPaths::writableLocation(
                 QStandardPaths::DownloadLocation)
-            + "/" + m_fileName;
+            + "/" + fileName;
 
         m_currentFile.setFileName(path);
 
-        if (!m_currentFile.open(QIODevice::WriteOnly))
+        if (!m_currentFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
         {
             qWarning() << "[FileTransfer] Failed to create"
-                       << path;
+                       << path << "- rejecting offer";
+
+            Message reject;
+            reject.type = ProtocolTypes::FILE_REJECT;
+            reject.payload["transfer_id"] = transferId;
+            MessageParser::send(client, reject);
             return;
         }
+
+        m_transferId = transferId;
+        m_fileName = fileName;
+        m_totalBytes = totalBytes;
 
         qDebug() << "[FileTransfer] Incoming file:"
                  << m_fileName
                  << "(" << m_totalBytes << "bytes )";
+
+        Message accept;
+        accept.type = ProtocolTypes::FILE_ACCEPT;
+        accept.payload["transfer_id"] = m_transferId;
+        MessageParser::send(client, accept);
     }
 
     else if (msg.type == ProtocolTypes::FILE_ACCEPT)

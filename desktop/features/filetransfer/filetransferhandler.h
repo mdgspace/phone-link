@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QFile>
+#include <QTcpSocket>
 
 #include "../../protocol/message.h"
 
@@ -15,7 +16,7 @@ class FileTransferHandler : public QObject
 public:
     explicit FileTransferHandler(QObject *parent = nullptr);
 
-    void handle(const Message &msg);
+    void handle(QTcpSocket *client, const Message &msg);
 
 signals:
     void fileReceived(const QString &transferId,

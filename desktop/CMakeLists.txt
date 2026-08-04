@@ -33,6 +33,7 @@ qt_add_qml_module(app_phone_link
         qml/pages/connection/ConnectedPage.qml
         qml/pages/connection/ServerControlPage.qml
         qml/pages/connection/RegistrationPage.qml
+        qml/pages/connection/PairingDialog.qml
 
         qml/pages/shared/SharedContentPage.qml
         qml/pages/shared/UnreadMessagesPage.qml
@@ -85,6 +86,9 @@ qt_add_qml_module(app_phone_link
 
         features/filetransfer/sharedfilesmodel.h
         features/filetransfer/sharedfilesmodel.cpp
+
+        features/notification/notificationhandler.h
+        features/notification/notificationhandler.cpp
 )
 
 set_source_files_properties(

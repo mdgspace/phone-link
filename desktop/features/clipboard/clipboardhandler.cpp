@@ -3,14 +3,17 @@
 #include "../../protocol/protocoltypes.h"
 
 #include <QDebug>
+#include <QTcpSocket>
 
 ClipboardHandler::ClipboardHandler(QObject *parent)
     : QObject(parent)
 {
 }
 
-void ClipboardHandler::handle(const Message &msg)
+void ClipboardHandler::handle(QTcpSocket *client, const Message &msg)
 {
+    Q_UNUSED(client);
+
     if (msg.type != ProtocolTypes::CLIPBOARD_PUSH)
     {
         return;

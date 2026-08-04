@@ -1,7 +1,8 @@
 #include "messagerouter.h"
 #include "protocoltypes.h"
+#include <QTcpSocket>
 
-void MessageRouter::route(const Message &msg)
+void MessageRouter::route(QTcpSocket *client, const Message &msg)
 {
     // ======================
     // Clipboard
@@ -9,7 +10,7 @@ void MessageRouter::route(const Message &msg)
 
     if (msg.type == ProtocolTypes::CLIPBOARD_PUSH)
     {
-        m_clipboardHandler.handle(msg);
+        m_clipboardHandler.handle(client, msg);
     }
 
     // ======================
@@ -20,7 +21,7 @@ void MessageRouter::route(const Message &msg)
              msg.type == ProtocolTypes::SMS_SEND ||
              msg.type == ProtocolTypes::SMS_RECEIVED)
     {
-        m_messageHandler.handle(msg);
+        m_messageHandler.handle(client, msg);
     }
 
     // ======================
@@ -33,7 +34,7 @@ void MessageRouter::route(const Message &msg)
              msg.type == ProtocolTypes::FILE_CHUNK ||
              msg.type == ProtocolTypes::FILE_DONE)
     {
-        m_fileHandler.handle(msg);
+        m_fileHandler.handle(client, msg);
     }
 
     // ======================
@@ -50,7 +51,7 @@ void MessageRouter::route(const Message &msg)
              msg.type == ProtocolTypes::PAIRING_REJECTED ||
              msg.type == ProtocolTypes::DISCONNECT)
     {
-        m_systemHandler.handle(msg);
+        m_systemHandler.handle(client, msg);
     }
 
     // ======================
@@ -60,7 +61,6 @@ void MessageRouter::route(const Message &msg)
     else if (msg.type == ProtocolTypes::NOTIFICATION_POSTED ||
              msg.type == ProtocolTypes::NOTIFICATION_DISMISSED)
     {
-        // TODO
-        // m_notificationHandler.handle(msg);
+        m_notificationHandler.handle(client, msg);
     }
 }

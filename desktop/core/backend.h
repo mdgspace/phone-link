@@ -4,6 +4,10 @@
 #define BACKEND_H
 
 #include <QObject>
+#include <QUuid>
+#include <QSysInfo>
+#include <QHash>
+#include <QTcpSocket>
 
 #include "../mdns/mdnsmanager.h"
 #include "../tcp/tcpserver.h"
@@ -38,6 +42,19 @@ class Backend : public QObject
     Q_PROPERTY(bool serverRunning
                    READ isServerRunning
                        NOTIFY serverRunningChanged)
+
+    // Pairing dialog state (shown on desktop while a phone waits to pair)
+    Q_PROPERTY(bool pairingPending
+                   READ isPairingPending
+                       NOTIFY pairingPendingChanged)
+
+    Q_PROPERTY(QString pairingPin
+                   READ pairingPin
+                       NOTIFY pairingPendingChanged)
+
+    Q_PROPERTY(QString pairingDeviceName
+                   READ pairingDeviceName
+                       NOTIFY pairingPendingChanged)
 
     // Data models exposed to UI
     Q_PROPERTY(ClipboardModel* clipboardModel
@@ -75,6 +92,10 @@ public:
     Q_INVOKABLE void startTcpServer();
     Q_INVOKABLE void stopTcpServer();
 
+    // Pairing dialog actions (called from QML once the user responds)
+    Q_INVOKABLE void confirmPairing();
+    Q_INVOKABLE void rejectPairing();
+
     /*
      * ================================
      * PROPERTY GETTERS
@@ -84,6 +105,10 @@ public:
     QString deviceName() const;
     bool isRegistering() const;
     bool isServerRunning() const;
+
+    bool isPairingPending() const { return m_pairingPending; }
+    QString pairingPin() const { return m_pairingPin; }
+    QString pairingDeviceName() const { return m_pairingDeviceName; }
 
     ClipboardModel* clipboardModel() { return &m_clipboardModel; }
     MessageModel* messageModel() { return &m_messageModel; }
@@ -97,6 +122,14 @@ public:
 
 private slots:
     void handleIncomingMessage(QTcpSocket *client, const Message &message);
+    void onHelloReceived(const QString &deviceId, const QString &deviceName);
+    void onPairingRequested(const QString &deviceId);
+    void onPairingAcceptedFromPhone();
+    void onDisconnected();
+    void onNotificationPosted(const QString &notificationId,
+                               const QString &appName,
+                               const QString &title,
+                               const QString &text);
 
 public slots:
     /*
@@ -127,6 +160,7 @@ signals:
     void deviceNameChanged();
     void registeringChanged();
     void serverRunningChanged();
+    void pairingPendingChanged();
 
 private:
     /*
@@ -135,7 +169,8 @@ private:
      * ================================
      */
 
-    QString m_deviceName = "Ava's Dell Laptop";
+    QString m_deviceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    QString m_deviceName = QSysInfo::machineHostName();
     QString m_serviceType = "_phonelink._tcp";
     quint16 m_port = 5555;
 
@@ -158,6 +193,29 @@ private:
      */
 
     MessageRouter m_router;
+
+    /*
+     * ================================
+     * PAIRING
+     * ================================
+     */
+    bool m_pairingPending = false;
+    QString m_pairingPin;
+    QString m_pairingDeviceId;
+    QString m_pairingDeviceName;
+
+    // The socket for the connection currently being processed / paired.
+    // PhoneLink only expects a single active phone connection at a time,
+    // so tracking "the current client" is sufficient here.
+    QTcpSocket *m_activeClient = nullptr;
+
+    // Most recently seen device name per device id, captured from HELLO,
+    // so it's available by the time PAIRING_REQUEST (which only carries
+    // device_id) arrives.
+    QHash<QString, QString> m_recentDeviceNames;
+
+    bool isDeviceTrusted(const QString &deviceId) const;
+    void trustDevice(const QString &deviceId, const QString &deviceName);
 };
 
 #endif // BACKEND_H

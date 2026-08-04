@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QObject>
+#include <QTcpSocket>
 
 #include "../../protocol/message.h"
 
@@ -14,7 +15,19 @@ class SystemHandler : public QObject
 public:
     explicit SystemHandler(QObject *parent = nullptr);
 
-    void handle(const Message &msg);
+    void handle(QTcpSocket *client, const Message &msg);
+
+    // Sent once the desktop user confirms the PIN shown in the pairing dialog.
+    void sendPairingPin(QTcpSocket *client, const QString &pin);
+
+    // Sent after the phone echoes pairing_accepted{} and the device has
+    // been persisted as trusted.
+    void sendPairingAccepted(QTcpSocket *client,
+                              const QString &deviceName,
+                              const QString &platform);
+
+    // Sent if the desktop user declines the incoming pairing request.
+    void sendPairingRejected(QTcpSocket *client);
 
 signals:
     void helloReceived(const QString &deviceId,

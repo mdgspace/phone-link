@@ -9,6 +9,9 @@
 #include "../features/filetransfer/filetransferhandler.h"
 #include "../features/messaging/messaginghandler.h"
 #include "../features/system/systemhandler.h"
+#include "../features/notification/notificationhandler.h"
+
+#include <QTcpSocket>
 
 class MessageRouter
 {
@@ -16,15 +19,17 @@ public:
     ClipboardHandler* clipboardHandler() { return &m_clipboardHandler; }
     MessagingHandler* messagingHandler() { return &m_messageHandler; }
     FileTransferHandler* fileHandler() { return &m_fileHandler; }
-    SystemHandler* systemHandler() { return m_systemHandler; }
+    SystemHandler* systemHandler() { return &m_systemHandler; }
+    NotificationHandler* notificationHandler() { return &m_notificationHandler; }
 
-    void route(const Message &msg);
+    void route(QTcpSocket *client, const Message &msg);
 
 private:
     ClipboardHandler m_clipboardHandler;
     FileTransferHandler m_fileHandler;
     MessagingHandler m_messageHandler;
     SystemHandler m_systemHandler;
+    NotificationHandler m_notificationHandler;
 };
 
 #endif // MESSAGEROUTER_H

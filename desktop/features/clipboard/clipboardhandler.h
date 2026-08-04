@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QObject>
+#include <QTcpSocket>
 
 #include "../../protocol/message.h"
 
@@ -14,7 +15,7 @@ class ClipboardHandler : public QObject
 public:
     explicit ClipboardHandler(QObject *parent = nullptr);
 
-    void handle(const Message &msg);
+    void handle(QTcpSocket *client, const Message &msg);
 
 signals:
     void clipboardReceived(const QString &text);

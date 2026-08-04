@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QObject>
+#include <QTcpSocket>
 
 #include "../../protocol/message.h"
 
@@ -14,7 +15,7 @@ class MessagingHandler : public QObject
 public:
     explicit MessagingHandler(QObject *parent = nullptr);
 
-    void handle(const Message &msg);
+    void handle(QTcpSocket *client, const Message &msg);
 
 signals:
     void messageReceived(const QString &id,

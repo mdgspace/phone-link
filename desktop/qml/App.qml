@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import com.phonelink
 
 Window {
@@ -29,6 +30,10 @@ Window {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
             }
+        }
+
+        PairingDialog {
+            parent: Overlay.overlay
         }
     }
 }

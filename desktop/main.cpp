@@ -11,6 +11,9 @@
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    QCoreApplication::setOrganizationName("PhoneLink");
+    QCoreApplication::setApplicationName("PhoneLinkDesktop");
+
     Backend backend;
 
     QQmlApplicationEngine engine;

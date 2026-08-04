@@ -3,6 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QTcpSocket>
 
 Message MessageParser::parse(const QByteArray &data)
 {
@@ -36,4 +37,26 @@ Message MessageParser::parse(const QByteArray &data)
         msg.timestamp = obj["timestamp"].toInteger();
 
     return msg;
+}
+
+QByteArray MessageParser::serialize(const Message &msg)
+{
+    QJsonObject obj;
+
+    obj["type"] = msg.type;
+    obj["payload"] = msg.payload;
+
+    if (!msg.from.isEmpty())
+        obj["from"] = msg.from;
+
+    if (msg.timestamp != 0)
+        obj["timestamp"] = msg.timestamp;
+
+    return QJsonDocument(obj).toJson(QJsonDocument::Compact);
+}
+
+void MessageParser::send(QTcpSocket *client, const Message &msg)
+{
+    client->write(serialize(msg));
+    client->write("\n");
 }
