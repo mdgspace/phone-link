@@ -123,7 +123,9 @@ void MdnsManager::clientCallback(AvahiClient *client,
 
 void MdnsManager::registerService(const QString &name,
                                   const QString &serviceType,
-                                  quint16 port)
+                                  quint16 port,
+                                  const QString &deviceId,
+                                  int protocolVersion)
 {
     if (!m_ready) {
         qWarning() << "[mDNS] registerService called before Avahi ready";
@@ -141,6 +143,16 @@ void MdnsManager::registerService(const QString &name,
              << "type =" << serviceType
              << "port =" << port;
 
+    // TXT records mirror the phone's own registration
+    // (mobile/flutter_ui/lib/services/mdns_registration.dart): id, proto,
+    // plat. We additionally publish "name" since mdns_discovery.dart
+    // reads txt['name'] for display, falling back to the raw service
+    // instance name if absent.
+    const QByteArray idTxt = ("id=" + deviceId).toUtf8();
+    const QByteArray protoTxt = ("proto=" + QString::number(protocolVersion)).toUtf8();
+    const QByteArray platTxt = QByteArray("plat=desktop");
+    const QByteArray nameTxt = ("name=" + name).toUtf8();
+
     avahi_entry_group_add_service(
         m_group,
         AVAHI_IF_UNSPEC,
@@ -151,6 +163,10 @@ void MdnsManager::registerService(const QString &name,
         nullptr,
         nullptr,
         port,
+        idTxt.constData(),
+        protoTxt.constData(),
+        platTxt.constData(),
+        nameTxt.constData(),
         nullptr
         );
 

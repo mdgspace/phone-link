@@ -68,8 +68,6 @@ void TcpServer::onNewConnection()
 
         connect(client, &QTcpSocket::readyRead, this, &TcpServer::onClientReadyRead);
         connect(client, &QTcpSocket::disconnected, this, &TcpServer::onClientDisconnected);
-
-        client->write("WELCOME\n");
     }
 }
 

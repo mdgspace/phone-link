@@ -20,7 +20,9 @@ public:
 
     void registerService(const QString &name,
                          const QString &serviceType,
-                         quint16 port);
+                         quint16 port,
+                         const QString &deviceId,
+                         int protocolVersion = 1);
 
     // void startDiscovery();
     // void stopDiscovery();

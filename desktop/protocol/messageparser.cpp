@@ -3,6 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QDateTime>
 #include <QTcpSocket>
 
 Message MessageParser::parse(const QByteArray &data)
@@ -57,6 +58,10 @@ QByteArray MessageParser::serialize(const Message &msg)
 
 void MessageParser::send(QTcpSocket *client, const Message &msg)
 {
-    client->write(serialize(msg));
+    Message outgoing = msg;
+    if (outgoing.timestamp == 0)
+        outgoing.timestamp = QDateTime::currentSecsSinceEpoch();
+
+    client->write(serialize(outgoing));
     client->write("\n");
 }

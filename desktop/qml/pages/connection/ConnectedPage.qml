@@ -22,7 +22,9 @@ Rectangle {
         }
 
         Text {
-            text: "Not connected"
+            text: Backend.peerConnected
+                  ? "Connected to " + Backend.peerDeviceName
+                  : "Not connected"
             color: "white"
             font.pointSize: 12
             horizontalAlignment: Text.AlignHCenter
@@ -35,7 +37,7 @@ Rectangle {
         // }
 
         Text {
-            text: "Encrypted TLS Connection"
+            text: "Plain TCP connection (not encrypted)"
             color: "#aaaaaa"
             Layout.fillWidth: true
         }

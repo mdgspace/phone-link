@@ -116,8 +116,16 @@ void Backend::startTcpServer()
         return;
 
     if (!m_tcpServer.start(m_port)) {
-        qWarning() << "Failed to start TCP server";
+        m_errorMessage = QString("Failed to start TCP server on port %1 "
+                                  "(port may already be in use)").arg(m_port);
+        qWarning() << m_errorMessage;
+        emit errorMessageChanged();
         return;
+    }
+
+    if (!m_errorMessage.isEmpty()) {
+        m_errorMessage.clear();
+        emit errorMessageChanged();
     }
 
     m_serverRunning = true;
@@ -152,7 +160,9 @@ void Backend::registerOnMdns()
     m_mdnsManager.registerService(
         m_deviceName,
         m_serviceType,
-        m_port
+        m_port,
+        m_deviceId,
+        m_protocolVersion
         );
 
     m_registering = true;
@@ -225,6 +235,10 @@ void Backend::onPairingRequested(const QString &deviceId)
         QString deviceName = m_recentDeviceNames.value(deviceId, deviceId);
         m_router.systemHandler()->sendPairingAccepted(
             m_activeClient, m_deviceName, QSysInfo::productType());
+
+        m_peerConnected = true;
+        m_peerDeviceName = deviceName;
+        emit peerConnectionChanged();
         return;
     }
 
@@ -278,6 +292,10 @@ void Backend::onPairingAcceptedFromPhone()
 
     qDebug() << "[Backend] Paired with" << m_pairingDeviceName;
 
+    m_peerConnected = true;
+    m_peerDeviceName = m_pairingDeviceName;
+    emit peerConnectionChanged();
+
     m_pairingPending = false;
     m_pairingPin.clear();
     m_pairingDeviceId.clear();
@@ -322,6 +340,16 @@ void Backend::onDisconnected()
         m_pairingDeviceId.clear();
         m_pairingDeviceName.clear();
         emit pairingPendingChanged();
+    }
+
+    if (m_peerConnected)
+    {
+        m_peerConnected = false;
+        m_peerDeviceName.clear();
+        emit peerConnectionChanged();
+
+        m_errorMessage = "Connection to phone was lost";
+        emit errorMessageChanged();
     }
 
     m_activeClient = nullptr;

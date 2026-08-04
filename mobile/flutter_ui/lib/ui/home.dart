@@ -311,7 +311,7 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 15),
+                            vertical: 5, horizontal: 15),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [

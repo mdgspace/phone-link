@@ -11,6 +11,7 @@
 
 #include "../mdns/mdnsmanager.h"
 #include "../tcp/tcpserver.h"
+#include "../tcp/protocol.h"
 #include "../protocol/messagerouter.h"
 
 #include "../features/clipboard/clipboardmodel.h"
@@ -55,6 +56,22 @@ class Backend : public QObject
     Q_PROPERTY(QString pairingDeviceName
                    READ pairingDeviceName
                        NOTIFY pairingPendingChanged)
+
+    // Real connection state for ConnectedPage.qml (was hardcoded before)
+    Q_PROPERTY(bool peerConnected
+                   READ isPeerConnected
+                       NOTIFY peerConnectionChanged)
+
+    Q_PROPERTY(QString peerDeviceName
+                   READ peerDeviceName
+                       NOTIFY peerConnectionChanged)
+
+    // Desktop-side error/status surface, e.g. "port already in use".
+    // Mirrors the errorMessage exposed by Flutter's ConnectionManager,
+    // but for server-side failures rather than outbound connection ones.
+    Q_PROPERTY(QString errorMessage
+                   READ errorMessage
+                       NOTIFY errorMessageChanged)
 
     // Data models exposed to UI
     Q_PROPERTY(ClipboardModel* clipboardModel
@@ -110,6 +127,10 @@ public:
     QString pairingPin() const { return m_pairingPin; }
     QString pairingDeviceName() const { return m_pairingDeviceName; }
 
+    bool isPeerConnected() const { return m_peerConnected; }
+    QString peerDeviceName() const { return m_peerDeviceName; }
+    QString errorMessage() const { return m_errorMessage; }
+
     ClipboardModel* clipboardModel() { return &m_clipboardModel; }
     MessageModel* messageModel() { return &m_messageModel; }
     SharedFilesModel* sharedFilesModel() { return &m_sharedFilesModel; }
@@ -161,6 +182,8 @@ signals:
     void registeringChanged();
     void serverRunningChanged();
     void pairingPendingChanged();
+    void peerConnectionChanged();
+    void errorMessageChanged();
 
 private:
     /*
@@ -172,7 +195,8 @@ private:
     QString m_deviceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
     QString m_deviceName = QSysInfo::machineHostName();
     QString m_serviceType = "_phonelink._tcp";
-    quint16 m_port = 5555;
+    quint16 m_port = TCP_SERVER_PORT;
+    int m_protocolVersion = 1; // matches mobile/flutter_ui/lib/data/local_device.dart
 
     /*
      * ================================
@@ -208,6 +232,10 @@ private:
     // PhoneLink only expects a single active phone connection at a time,
     // so tracking "the current client" is sufficient here.
     QTcpSocket *m_activeClient = nullptr;
+
+    bool m_peerConnected = false;
+    QString m_peerDeviceName;
+    QString m_errorMessage;
 
     // Most recently seen device name per device id, captured from HELLO,
     // so it's available by the time PAIRING_REQUEST (which only carries
