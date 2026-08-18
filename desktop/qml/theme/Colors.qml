@@ -2,25 +2,20 @@ pragma Singleton
 import QtQuick
 
 QtObject {
-    readonly property color windowBg: "#0b0d10"
-    readonly property color sidebarBg: "#111419"
-    readonly property color panelBg: "#15191f"
-    readonly property color panelBgAlt: "#191e25"
-    readonly property color border: "#252c35"
-    readonly property color borderLight: "#303844"
-    readonly property color selected: "#202a35"
-    readonly property color hover: "#1a222b"
+    // Backgrounds
+    readonly property color connBg: "#0C0C0C" // connections background
+    readonly property color mainBg: "#111111" // main content body background
+    readonly property color navBg: "#1D1D1D" // navbar background
+    readonly property color selected: "#2A2A2A" // settings / nav item selected
+    readonly property color connWidgetBg: "#222222" // connectionPage widgets bg
 
-    readonly property color textPrimary: "#f3f5f7"
-    readonly property color textSecondary: "#a8b0ba"
-    readonly property color textMuted: "#6f7884"
+    // Texts
+    readonly property color textPrimary: "#DEE0E2"
+    readonly property color textSecondary: "#CCCCCC" // light grayish?
+    // one more text color?
 
-    readonly property color accent: "#5aa9ff"
-    readonly property color accentSoft: "#18304a"
-    readonly property color success: "#45c486"
-    readonly property color successSoft: "#153528"
-    readonly property color warning: "#f0b45b"
-    readonly property color warningSoft: "#3b2b16"
-    readonly property color error: "#ef6b73"
-    readonly property color errorSoft: "#3b1d22"
+    // Status
+    // readonly property color success: ""
+    // readonly property color warning: ""
+    // readonly property color error: ""
 }

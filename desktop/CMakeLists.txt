@@ -25,6 +25,7 @@ qt_add_qml_module(app_phone_link
         qml/theme/Colors.qml
 
         qml/App.qml
+        qml/qmldir
 
         qml/layout/MainContent.qml
         qml/layout/NavigationBar.qml
