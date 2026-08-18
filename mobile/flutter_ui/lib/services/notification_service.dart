@@ -41,7 +41,10 @@ class NotificationService extends ChangeNotifier {
   }
 
   void dismiss(String key) {
-    _notifications.removeWhere((n) => n.key == key);
+    final index = _notifications.indexWhere((n) => n.key == key);
+    if (index < 0) return;
+
+    _notifications.removeAt(index);
     notifyListeners();
   }
 
@@ -50,8 +53,25 @@ class NotificationService extends ChangeNotifier {
       case 'onNotificationPosted':
         final notif = PhoneNotification.fromJson(
             Map<String, dynamic>.from(call.arguments as Map));
-        _notifications.insert(0, notif);
-        if (_notifications.length > 100) _notifications.removeLast();
+
+        // Android reuses the same StatusBarNotification key when an existing
+        // notification is updated (for example, a message notification
+        // receiving another message). Do not keep multiple copies with the
+        // same key: Dismissible/Provider removal would otherwise remove every
+        // copy at once.
+        final existingIndex =
+            _notifications.indexWhere((n) => n.key == notif.key);
+
+        if (existingIndex >= 0) {
+          _notifications[existingIndex] = notif;
+        } else {
+          _notifications.insert(0, notif);
+        }
+
+        if (_notifications.length > 100) {
+          _notifications.removeLast();
+        }
+
         notifyListeners();
 
         _connection.send(Packet(
@@ -62,8 +82,12 @@ class NotificationService extends ChangeNotifier {
 
       case 'onNotificationRemoved':
         final key = (call.arguments as Map)['key'] as String? ?? '';
-        _notifications.removeWhere((n) => n.key == key);
-        notifyListeners();
+        final index = _notifications.indexWhere((n) => n.key == key);
+
+        if (index >= 0) {
+          _notifications.removeAt(index);
+          notifyListeners();
+        }
 
         _connection.send(Packet(
           type: PacketType.notificationDismissed,

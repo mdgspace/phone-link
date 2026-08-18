@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/connection_manager.dart' as cm;
 import '../services/mdns_discovery.dart';
 import '../services/mdns_registration.dart';
+import '../services/pairing_service.dart';
 import '../utils/helpers.dart';
 import 'available_devices_sheet.dart';
 import 'messages_screen.dart';
@@ -162,50 +163,55 @@ class _ConnectedView extends StatelessWidget {
 
 class _PairingView extends StatelessWidget {
   final cm.ConnectionManager connection;
+
   const _PairingView({required this.connection});
 
   @override
   Widget build(BuildContext context) {
-    final pin = context.watch<cm.ConnectionManager>();
-    // Read PIN from pairing service through provider
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Text(
-          'Pairing request',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Confirm this PIN on both devices:',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13),
-        ),
-        const SizedBox(height: 16),
-        Consumer(
-          builder: (context, dynamic pairingSvc, _) {
-            // PairingService is provided above — read from it
-            return Text(
-              '------', // PIN is shown via PairingPinBanner below
+    // IMPORTANT: Consumer must have a concrete type. A bare Consumer
+    // infers dynamic and provider.dart deliberately asserts against it.
+    return Consumer<PairingService>(
+      builder: (context, pairingService, _) {
+        final pin = pairingService.pendingPin ?? '------';
+
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Pairing request',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 8,
-                color: Colors.blue.shade700,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Confirm this PIN on both devices:',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                pin,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 8,
+                  color: Colors.blue.shade700,
+                ),
               ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        TextButton(
-          onPressed: () => connection.disconnect(),
-          style: _btnStyle(Colors.red.shade200),
-          child: const Text('Cancel'),
-        ),
-      ],
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => connection.disconnect(),
+              style: _btnStyle(Colors.red.shade200),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -296,13 +302,28 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
 
               return Consumer<MdnsRegistrationController>(
                 builder: (context, controller, _) {
+                  if (!controller.isRegistered &&
+                      !controller.isStarting &&
+                      controller.errorMessage == null) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) controller.start();
+                    });
+                  }
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'This device is discoverable',
+                        controller.errorMessage == null
+                            ? 'This device is discoverable'
+                            : 'This device could not start advertising',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: controller.errorMessage == null
+                              ? null
+                              : Colors.red,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Container(
@@ -311,7 +332,7 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 15),
+                            vertical: 10, horizontal: 15),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -344,10 +365,27 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
                                     child: const Text('Stop advertising'),
                                   )
                                 : TextButton(
-                                    onPressed: controller.start,
+                                    onPressed: controller.isStarting
+                                        ? null
+                                        : controller.start,
                                     style: _btnStyle(Colors.grey.shade300),
-                                    child: const Text('Start advertising'),
+                                    child: Text(
+                                      controller.isStarting
+                                          ? 'Starting advertising...'
+                                          : 'Start advertising',
+                                    ),
                                   ),
+                            if (controller.errorMessage != null) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                controller.errorMessage!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.red.shade700,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),

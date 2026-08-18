@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 Future<String?> getLocalIPv4() async {
@@ -8,9 +9,21 @@ Future<String?> getLocalIPv4() async {
     type: InternetAddressType.IPv4,
   );
 
-  for (final interface in interfaces) {
+  // Do not assume the interface is named wlan0; Android OEMs vary.
+  final preferred = <NetworkInterface>[
+    ...interfaces.where((i) {
+      final n = i.name.toLowerCase();
+      return n.contains('wlan') || n.contains('wifi') || n.contains('ap');
+    }),
+    ...interfaces,
+  ];
+
+  final seen = <String>{};
+  for (final interface in preferred) {
     for (final addr in interface.addresses) {
-      if (addr.type == InternetAddressType.IPv4 && !addr.isLoopback) {
+      if (addr.type == InternetAddressType.IPv4 &&
+          !addr.isLoopback &&
+          seen.add(addr.address)) {
         return addr.address;
       }
     }
@@ -19,35 +32,29 @@ Future<String?> getLocalIPv4() async {
 }
 
 Stream<bool> wifiAvailableStream() async* {
-  // Emit initial state
-  yield await _isWifiUsable();
+  yield await _isLocalNetworkUsable();
 
-  // Listen for connectivity changes
   await for (final _ in Connectivity().onConnectivityChanged) {
-    yield await _isWifiUsable();
+    yield await _isLocalNetworkUsable();
   }
 }
 
-Future<bool> _isWifiUsable() async {
-  final connectivity = await Connectivity().checkConnectivity();
+Future<bool> _isLocalNetworkUsable() async {
+  try {
+    final connectivity = await Connectivity().checkConnectivity();
+    if (connectivity.contains(ConnectivityResult.none)) return false;
 
-  if (connectivity == ConnectivityResult.none) {
+    final interfaces = await NetworkInterface.list(
+      includeLoopback: false,
+      type: InternetAddressType.IPv4,
+    );
+
+    return interfaces.any(
+      (interface) => interface.addresses.any(
+        (addr) => addr.type == InternetAddressType.IPv4 && !addr.isLoopback,
+      ),
+    );
+  } catch (_) {
     return false;
   }
-
-  final interfaces = await NetworkInterface.list(
-    includeLoopback: false,
-  );
-
-  for (final interface in interfaces) {
-    if (interface.name == 'wlan0') {
-      for (final addr in interface.addresses) {
-        if (addr.type == InternetAddressType.IPv4) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
 }

@@ -18,88 +18,64 @@ class PhoneLinkApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Phone Link',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      home: _AppProviders(configService: configService),
-    );
-  }
-}
-
-/// Sets up the full provider tree so every service is available app-wide
-class _AppProviders extends StatelessWidget {
-  final LocalDeviceConfigService configService;
-  const _AppProviders({required this.configService});
-
-  @override
-  Widget build(BuildContext context) {
+    // Providers are intentionally ABOVE MaterialApp. Modal routes created by
+    // its Navigator must be able to access ConnectionManager.
     return MultiProvider(
       providers: [
-        // Config
-        Provider.value(value: configService),
-
-        // mDNS registration
-        ChangeNotifierProvider(
+        Provider<LocalDeviceConfigService>.value(value: configService),
+        ChangeNotifierProvider<MdnsRegistrationController>(
           create: (_) => MdnsRegistrationController(configService),
         ),
-
-        // Pairing — must be above ConnectionManager
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<PairingService>(
           create: (_) => PairingService()..load(),
         ),
-
-        // Connection (depends on PairingService)
         ChangeNotifierProxyProvider<PairingService, ConnectionManager>(
           create: (ctx) => ConnectionManager(
             configService,
             ctx.read<PairingService>(),
           ),
-          update: (_, pairing, prev) =>
-              prev ?? ConnectionManager(configService, pairing),
+          update: (_, pairing, previous) {
+            // Keep the same ConnectionManager instance. It owns the TCP
+            // connection state and must not be recreated on rebuilds.
+            if (previous != null) {
+              return previous;
+            }
+            return ConnectionManager(configService, pairing);
+          },
         ),
-
-        // Feature services (all depend on ConnectionManager)
         ChangeNotifierProxyProvider<ConnectionManager, SmsService>(
-          create: (ctx) => SmsService(
-            ctx.read<ConnectionManager>(),
-            configService,
-          ),
-          update: (_, conn, prev) =>
-              prev ?? SmsService(conn, configService),
+          create: (ctx) => SmsService(ctx.read<ConnectionManager>(), configService),
+          update: (_, conn, previous) =>
+              previous ?? SmsService(conn, configService),
         ),
-
         ChangeNotifierProxyProvider<ConnectionManager, NotificationService>(
-          create: (ctx) => NotificationService(
-            ctx.read<ConnectionManager>(),
-            configService,
-          ),
-          update: (_, conn, prev) =>
-              prev ?? NotificationService(conn, configService),
+          create: (ctx) =>
+              NotificationService(ctx.read<ConnectionManager>(), configService),
+          update: (_, conn, previous) =>
+              previous ?? NotificationService(conn, configService),
         ),
-
         ChangeNotifierProxyProvider<ConnectionManager, ClipboardService>(
-          create: (ctx) => ClipboardService(
-            ctx.read<ConnectionManager>(),
-            configService,
-          ),
-          update: (_, conn, prev) =>
-              prev ?? ClipboardService(conn, configService),
+          create: (ctx) =>
+              ClipboardService(ctx.read<ConnectionManager>(), configService),
+          update: (_, conn, previous) =>
+              previous ?? ClipboardService(conn, configService),
         ),
-
         ChangeNotifierProxyProvider<ConnectionManager, FileTransferService>(
-          create: (ctx) => FileTransferService(
-            ctx.read<ConnectionManager>(),
-            configService,
-          ),
-          update: (_, conn, prev) =>
-              prev ?? FileTransferService(conn, configService),
+          create: (ctx) =>
+              FileTransferService(ctx.read<ConnectionManager>(), configService),
+          update: (_, conn, previous) =>
+              previous ?? FileTransferService(conn, configService),
         ),
       ],
-      child: const HomePage(),
+      child: MaterialApp(
+        title: 'Phone Link',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          useMaterial3: true,
+        ),
+        home: const HomePage(),
+      ),
     );
   }
 }
