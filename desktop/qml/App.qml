@@ -589,8 +589,16 @@ Window {
                                     width: ListView.view.width
                                     height: 70
                                     radius: 10
-                                    color: "#12171d"
-                                    border.color: "#202731"
+                                    color: mouse.containsMouse ? "#1a222c" : "#12171d"
+                                    border.color: mouse.containsMouse ? "#3a4655" : "#202731"
+
+                                    MouseArea {
+                                        id: mouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: Backend.sharedFilesModel.openFile(index)
+                                    }
 
                                     RowLayout {
                                         anchors.fill: parent
@@ -622,7 +630,7 @@ Window {
                                                 Layout.fillWidth: true
                                             }
                                             Text {
-                                                text: root.formatBytes(model.totalBytes)
+                                                text: root.formatBytes(model.totalBytes) + "  •  Click to open"
                                                 color: "#7f8995"
                                                 font.pixelSize: 11
                                             }

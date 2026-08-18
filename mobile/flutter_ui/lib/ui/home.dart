@@ -7,6 +7,7 @@ import '../services/mdns_registration.dart';
 import '../services/pairing_service.dart';
 import '../utils/helpers.dart';
 import 'available_devices_sheet.dart';
+import 'files_screen.dart';
 import 'messages_screen.dart';
 import 'notifications_screen.dart';
 import 'permissions_sheet.dart';
@@ -436,11 +437,13 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
 // ───────────────────────────────────────────────
 class _FeatureRow extends StatelessWidget {
   final cm.ConnectionManager connection;
+
   const _FeatureRow({required this.connection});
 
   @override
   Widget build(BuildContext context) {
     final enabled = connection.isConnected;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
@@ -454,7 +457,7 @@ class _FeatureRow extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const MessagesScreen()),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           _FeatureChip(
             icon: Icons.notifications_outlined,
             label: 'Notifications',
@@ -462,20 +465,30 @@ class _FeatureRow extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => const NotificationsScreen()),
+                builder: (_) => const NotificationsScreen(),
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           _FeatureChip(
             icon: Icons.content_copy,
             label: 'Clipboard',
             enabled: enabled,
             onTap: () {
-              context.read<cm.ConnectionManager>(); // just to show it works
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Clipboard synced')),
               );
             },
+          ),
+          const SizedBox(width: 6),
+          _FeatureChip(
+            icon: Icons.folder_outlined,
+            label: 'Files',
+            enabled: enabled,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FilesScreen()),
+            ),
           ),
         ],
       ),
@@ -502,7 +515,7 @@ class _FeatureChip extends StatelessWidget {
       child: GestureDetector(
         onTap: enabled ? onTap : null,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: enabled
                 ? Colors.blue.shade50
@@ -511,15 +524,18 @@ class _FeatureChip extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Icon(icon,
-                  color: enabled
-                      ? Colors.blue.shade700
-                      : Colors.grey.shade400),
+              Icon(
+                icon,
+                color: enabled
+                    ? Colors.blue.shade700
+                    : Colors.grey.shade400,
+                size: 21,
+              ),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   color: enabled
                       ? Colors.blue.shade700
                       : Colors.grey.shade400,

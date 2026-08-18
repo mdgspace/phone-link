@@ -102,18 +102,30 @@ void FileTransferHandler::handle(QTcpSocket *client, const Message &msg)
             return;
         }
 
-        QJsonArray array =
-            msg.payload.value("data").toArray();
-
+        const QJsonValue rawData = msg.payload.value("data");
         QByteArray bytes;
-        bytes.reserve(array.size());
 
-        for (const auto &value : array)
+        // New mobile clients send base64 strings. Keep accepting the old
+        // JSON array format for compatibility with older phone builds.
+        if (rawData.isString())
         {
-            bytes.append(static_cast<char>(value.toInt()));
+            bytes = QByteArray::fromBase64(rawData.toString().toUtf8());
+        }
+        else if (rawData.isArray())
+        {
+            const QJsonArray array = rawData.toArray();
+            bytes.reserve(array.size());
+            for (const auto &value : array)
+                bytes.append(static_cast<char>(value.toInt()));
+        }
+        else
+        {
+            qWarning() << "[FileTransfer] Invalid chunk data.";
+            return;
         }
 
-        m_currentFile.write(bytes);
+        if (m_currentFile.write(bytes) != bytes.size())
+            qWarning() << "[FileTransfer] Failed to write complete chunk.";
     }
 
     else if (msg.type == ProtocolTypes::FILE_DONE)
