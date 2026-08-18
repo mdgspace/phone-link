@@ -144,7 +144,7 @@ public:
 private slots:
     void handleIncomingMessage(QTcpSocket *client, const Message &message);
     void onHelloReceived(const QString &deviceId, const QString &deviceName);
-    void onPairingRequested(const QString &deviceId);
+    void onPairingRequested(const QString &deviceId, const QString &pin);
     void onPairingAcceptedFromPhone();
     void onDisconnected();
     void onNotificationPosted(const QString &notificationId,
@@ -227,6 +227,16 @@ private:
     QString m_pairingPin;
     QString m_pairingDeviceId;
     QString m_pairingDeviceName;
+
+    /*
+     * ================================
+     * DATA MODELS
+     * ================================
+     */
+
+    ClipboardModel m_clipboardModel;
+    MessageModel m_messageModel;
+    SharedFilesModel m_sharedFilesModel;
 
     // The socket for the connection currently being processed / paired.
     // PhoneLink only expects a single active phone connection at a time,

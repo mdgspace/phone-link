@@ -4,6 +4,8 @@
 #include "message.h"
 #include <QByteArray>
 
+class QTcpSocket;
+
 class MessageParser
 {
 public:

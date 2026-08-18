@@ -15,6 +15,10 @@ class SystemHandler : public QObject
 public:
     explicit SystemHandler(QObject *parent = nullptr);
 
+    // Real local identity, used in hello_ack / pairing_accepted replies
+    // instead of hardcoded placeholder values.
+    void setLocalDevice(const QString &deviceId, const QString &deviceName);
+
     void handle(QTcpSocket *client, const Message &msg);
 
     // Sent once the desktop user confirms the PIN shown in the pairing dialog.
@@ -39,7 +43,7 @@ signals:
 
     void heartbeatAcknowledged();
 
-    void pairingRequested(const QString &deviceId);
+    void pairingRequested(const QString &deviceId, const QString &pin);
 
     void pairingPinReceived(const QString &pin);
 
@@ -48,6 +52,10 @@ signals:
     void pairingRejected();
 
     void disconnected();
+
+private:
+    QString m_localDeviceId;
+    QString m_localDeviceName;
 };
 
 #endif // SYSTEMHANDLER_H

@@ -1,5 +1,5 @@
 #pragma once
-#include <qtypes.h>
+#include <QtGlobal>
 
 // Single source of truth for the desktop's TCP listen port. The phone
 // never hardcodes a port — it always connects to whatever port is
