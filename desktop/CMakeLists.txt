@@ -89,6 +89,8 @@ qt_add_qml_module(app_phone_link
 
         features/notification/notificationhandler.h
         features/notification/notificationhandler.cpp
+        features/notification/notificationmodel.h
+        features/notification/notificationmodel.cpp
 )
 
 set_source_files_properties(

@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QSettings>
 #include <QRandomGenerator>
+#include <QDateTime>
 #include "../protocol/protocoltypes.h"
 #include "../protocol/messageparser.h"
 
@@ -65,6 +66,12 @@ Backend::Backend(QObject *parent)
         &NotificationHandler::notificationPosted,
         this,
         &Backend::onNotificationPosted);
+
+    connect(
+        m_router.notificationHandler(),
+        &NotificationHandler::notificationDismissed,
+        this,
+        &Backend::onNotificationDismissed);
 
     // Start mDNS subsystem
     m_mdnsManager.start();
@@ -327,10 +334,23 @@ void Backend::onNotificationPosted(const QString &notificationId,
                                     const QString &title,
                                     const QString &text)
 {
-    // Native desktop notification display is intentionally out of scope
-    // for now (see tasks.md); just log so the pipeline is verifiable.
-    Q_UNUSED(notificationId);
-    qDebug() << "[Backend] Notification from" << appName << "-" << title << ":" << text;
+    qDebug() << "[Backend] Notification from"
+             << appName << "-" << title << ":" << text;
+
+    // The notification id is stable for an Android notification, so repeated
+    // posts update the same desktop list item instead of creating duplicates.
+    m_notificationModel.addOrUpdateNotification(
+        notificationId,
+        QString(),
+        appName,
+        title,
+        text,
+        QDateTime::currentSecsSinceEpoch());
+}
+
+void Backend::onNotificationDismissed(const QString &notificationId)
+{
+    m_notificationModel.removeNotification(notificationId);
 }
 
 // Replies

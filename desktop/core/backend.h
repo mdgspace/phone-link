@@ -17,6 +17,7 @@
 #include "../features/clipboard/clipboardmodel.h"
 #include "../features/filetransfer/sharedfilesmodel.h"
 #include "../features/messaging/messagemodel.h"
+#include "../features/notification/notificationmodel.h"
 
 class Backend : public QObject
 {
@@ -86,6 +87,10 @@ class Backend : public QObject
                    READ sharedFilesModel
                        CONSTANT)
 
+    Q_PROPERTY(NotificationModel* notificationModel
+                   READ notificationModel
+                       CONSTANT)
+
 public:
     /*
      * ================================
@@ -134,6 +139,7 @@ public:
     ClipboardModel* clipboardModel() { return &m_clipboardModel; }
     MessageModel* messageModel() { return &m_messageModel; }
     SharedFilesModel* sharedFilesModel() { return &m_sharedFilesModel; }
+    NotificationModel* notificationModel() { return &m_notificationModel; }
 
     /*
      * ================================
@@ -151,6 +157,7 @@ private slots:
                                const QString &appName,
                                const QString &title,
                                const QString &text);
+    void onNotificationDismissed(const QString &notificationId);
 
 public slots:
     /*
@@ -237,6 +244,7 @@ private:
     ClipboardModel m_clipboardModel;
     MessageModel m_messageModel;
     SharedFilesModel m_sharedFilesModel;
+    NotificationModel m_notificationModel;
 
     // The socket for the connection currently being processed / paired.
     // PhoneLink only expects a single active phone connection at a time,
