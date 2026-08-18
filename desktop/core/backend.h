@@ -176,7 +176,7 @@ public slots:
 
     void onClipboardReceived(const QString &text);
     void onMessageReceived(const QString &id, const QString &address, const QString &body, bool isIncoming, qint64 timestamp);
-    void onFileReceived(const QString &transferId, const QString &fileName, qint64 totalBytes);
+    void onFileReceived(const QString &transferId, const QString &fileName, qint64 totalBytes, const QString &filePath);
 
 signals:
     /*

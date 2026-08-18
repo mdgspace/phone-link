@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'data/local_device.dart';
 import 'services/clipboard_service.dart';
 import 'services/connection_manager.dart';
-import 'services/file_transfer_service.dart';
+import 'services/file_transfer_service_fast.dart';
 import 'services/mdns_registration.dart';
 import 'services/notification_service.dart';
 import 'services/pairing_service.dart';
