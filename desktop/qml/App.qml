@@ -1,39 +1,39 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Layouts
 import com.phonelink
 
-Window {
-    width: 640
-    height: 480
+ApplicationWindow {
+    id: root
+    width: 1180
+    height: 760
+    minimumWidth: 980
+    minimumHeight: 620
     visible: true
-    title: "PhoneLink"
+    title: "PhoneLink Desktop"
+    color: Colors.windowBg
 
-    Rectangle {
+    property int currentPage: 0
+
+    RowLayout {
         anchors.fill: parent
+        spacing: 0
 
-        Item {
-            anchors.fill: parent
-
-            NavigationBar {
-                id: navigationBar
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: mainContent.top
-            }
-
-            MainContent {
-                id: mainContent
-                anchors.top: navigationBar.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-            }
+        NavigationBar {
+            Layout.fillHeight: true
+            Layout.preferredWidth: 235
+            currentPage: root.currentPage
+            onPageSelected: function(page) { root.currentPage = page }
         }
 
-        PairingDialog {
-            parent: Overlay.overlay
+        MainContent {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentPage: root.currentPage
         }
+    }
+
+    PairingDialog {
+        parent: Overlay.overlay
     }
 }
