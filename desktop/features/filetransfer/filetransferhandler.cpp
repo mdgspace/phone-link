@@ -4,6 +4,7 @@
 #include "../../protocol/messageparser.h"
 
 #include <QDebug>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QStandardPaths>
 #include <QTcpSocket>
@@ -25,19 +26,28 @@ void FileTransferHandler::handle(QTcpSocket *client, const Message &msg)
             return;
         }
 
-        QString transferId =
+        const QString transferId =
             msg.payload.value("transfer_id").toString();
 
-        QString fileName =
-            msg.payload.value("file_name").toString();
+        // Keep only the filename component. This prevents a remote filename
+        // from escaping the Downloads directory.
+        const QString fileName =
+            QFileInfo(msg.payload.value("file_name").toString()).fileName();
 
-        qint64 totalBytes =
+        const qint64 totalBytes =
             msg.payload.value("total_bytes").toInteger();
 
-        QString path =
+        if (fileName.isEmpty())
+        {
+            qWarning() << "[FileTransfer] Empty file name.";
+            return;
+        }
+
+        const QString downloadDir =
             QStandardPaths::writableLocation(
-                QStandardPaths::DownloadLocation)
-            + "/" + fileName;
+                QStandardPaths::DownloadLocation);
+
+        const QString path = downloadDir + "/" + fileName;
 
         m_currentFile.setFileName(path);
 
@@ -55,6 +65,7 @@ void FileTransferHandler::handle(QTcpSocket *client, const Message &msg)
 
         m_transferId = transferId;
         m_fileName = fileName;
+        m_filePath = path;
         m_totalBytes = totalBytes;
 
         qDebug() << "[FileTransfer] Incoming file:"
@@ -66,10 +77,9 @@ void FileTransferHandler::handle(QTcpSocket *client, const Message &msg)
         accept.payload["transfer_id"] = m_transferId;
         MessageParser::send(client, accept);
     }
-
     else if (msg.type == ProtocolTypes::FILE_ACCEPT)
     {
-        QString transferId =
+        const QString transferId =
             msg.payload.value("transfer_id").toString();
 
         qDebug() << "[FileTransfer] Transfer accepted:"
@@ -77,23 +87,19 @@ void FileTransferHandler::handle(QTcpSocket *client, const Message &msg)
 
         emit fileTransferAccepted(transferId);
     }
-
     else if (msg.type == ProtocolTypes::FILE_REJECT)
     {
-        QString transferId =
+        const QString transferId =
             msg.payload.value("transfer_id").toString();
 
         qDebug() << "[FileTransfer] Transfer rejected:"
                  << transferId;
 
         if (m_currentFile.isOpen())
-        {
             m_currentFile.close();
-        }
 
         emit fileTransferRejected(transferId);
     }
-
     else if (msg.type == ProtocolTypes::FILE_CHUNK)
     {
         if (!m_currentFile.isOpen())
@@ -105,17 +111,19 @@ void FileTransferHandler::handle(QTcpSocket *client, const Message &msg)
         const QJsonValue rawData = msg.payload.value("data");
         QByteArray bytes;
 
-        // New mobile clients send base64 strings. Keep accepting the old
-        // JSON array format for compatibility with older phone builds.
+        // New mobile clients send base64 strings.
         if (rawData.isString())
         {
-            bytes = QByteArray::fromBase64(rawData.toString().toUtf8());
+            bytes = QByteArray::fromBase64(
+                rawData.toString().toUtf8());
         }
+        // Older mobile builds send a JSON array of byte values.
         else if (rawData.isArray())
         {
             const QJsonArray array = rawData.toArray();
             bytes.reserve(array.size());
-            for (const auto &value : array)
+
+            for (const QJsonValue &value : array)
                 bytes.append(static_cast<char>(value.toInt()));
         }
         else
@@ -125,32 +133,30 @@ void FileTransferHandler::handle(QTcpSocket *client, const Message &msg)
         }
 
         if (m_currentFile.write(bytes) != bytes.size())
+        {
             qWarning() << "[FileTransfer] Failed to write complete chunk.";
+        }
     }
-
     else if (msg.type == ProtocolTypes::FILE_DONE)
     {
         if (m_currentFile.isOpen())
-        {
             m_currentFile.close();
-        }
 
-        qDebug() << "[FileTransfer] Saved:"
-                 << m_currentFile.fileName();
+        qDebug() << "[FileTransfer] Saved:" << m_filePath;
 
         emit fileReceived(
             m_transferId,
             m_fileName,
-            m_totalBytes);
+            m_totalBytes,
+            m_filePath);
 
         m_transferId.clear();
         m_fileName.clear();
+        m_filePath.clear();
         m_totalBytes = 0;
     }
-
     else
     {
-        qWarning() << "[FileTransfer] Unknown packet:"
-                   << msg.type;
+        qWarning() << "[FileTransfer] Unknown packet:" << msg.type;
     }
 }

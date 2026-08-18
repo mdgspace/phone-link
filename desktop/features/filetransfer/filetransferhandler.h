@@ -21,7 +21,8 @@ public:
 signals:
     void fileReceived(const QString &transferId,
                       const QString &fileName,
-                      qint64 totalBytes);
+                      qint64 totalBytes,
+                      const QString &filePath);
 
     void fileTransferAccepted(const QString &transferId);
 
@@ -30,6 +31,7 @@ signals:
 private:
     QString m_transferId;
     QString m_fileName;
+    QString m_filePath;
     qint64 m_totalBytes = 0;
 
     QFile m_currentFile;

@@ -215,12 +215,9 @@ void Backend::onMessageReceived(const QString &id,
     m_messageModel.addMessage(id, address, body, isIncoming, timestamp);
 }
 
-void Backend::onFileReceived(const QString &transferId,
-                             const QString &fileName,
-                             qint64 totalBytes,
-                             const QString &filePath)
+void Backend::onFileReceived(const QString &transferId, const QString &fileName, qint64 totalBytes)
 {
-    m_sharedFilesModel.addFile(transferId, fileName, totalBytes, filePath);
+    m_sharedFilesModel.addFile(transferId, fileName, totalBytes);
 }
 
 // ======================
