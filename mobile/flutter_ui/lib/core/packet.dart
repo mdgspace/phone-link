@@ -24,6 +24,7 @@ class PacketType {
 
   // Notifications
   static const String notificationPosted = 'notification_posted';
+  static const String notificationDismiss = 'notification_dismiss';
   static const String notificationDismissed = 'notification_dismissed';
 
   // Clipboard

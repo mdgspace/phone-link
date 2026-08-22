@@ -2,102 +2,134 @@
 #include "protocol.h"
 #include "../protocol/messageparser.h"
 
+#include <QFile>
 #include <QHostAddress>
 #include <QDebug>
+#include <QSslConfiguration>
+#include <QSslCertificate>
+#include <QSslKey>
 
 TcpServer::TcpServer(QObject *parent)
     : QObject{parent}
 {
     connect(&m_server,
-            &QTcpServer::newConnection,
+            &QSslServer::pendingConnectionAvailable,
             this,
             &TcpServer::onNewConnection);
+
+    connect(&m_server,
+            &QSslServer::errorOccurred,
+            this,
+            [](QSslSocket *socket, QAbstractSocket::SocketError error) {
+                qWarning() << "[TLS] handshake/socket error on"
+                           << (socket ? socket->peerAddress().toString() : QString("<unknown>"))
+                           << error
+                           << (socket ? socket->errorString() : QString());
+            });
 }
 
 bool TcpServer::start(quint16 port)
 {
-    bool ok = m_server.listen(QHostAddress::Any, port);
+    QFile certFile(":/tls/server.crt");
+    QFile keyFile(":/tls/server.key");
 
-    if (!ok) {
-        qWarning() << "TCP server failed to start:" << m_server.errorString();
+    if (!certFile.open(QIODevice::ReadOnly) || !keyFile.open(QIODevice::ReadOnly)) {
+        qWarning() << "[TLS] Could not load embedded server certificate/key";
         return false;
     }
 
-    qDebug() << "TCP server listening on"
-             << m_server.serverAddress() << " : "
-             << m_server.serverPort();
+    const QSslCertificate certificate(certFile.readAll(), QSsl::Pem);
+    const QSslKey privateKey(keyFile.readAll(), QSsl::Rsa, QSsl::Pem);
+
+    if (certificate.isNull() || privateKey.isNull()) {
+        qWarning() << "[TLS] Invalid server certificate or private key";
+        return false;
+    }
+
+    QSslConfiguration configuration = QSslConfiguration::defaultServerConfiguration();
+    configuration.setLocalCertificate(certificate);
+    configuration.setPrivateKey(privateKey);
+    configuration.setPeerVerifyMode(QSslSocket::VerifyNone);
+    configuration.setProtocol(QSsl::TlsV1_3OrLater);
+
+    m_server.setSslConfiguration(configuration);
+    m_server.setHandshakeTimeout(6000);
+
+    if (!m_server.listen(QHostAddress::Any, port)) {
+        qWarning() << "TLS server failed to start:" << m_server.errorString();
+        return false;
+    }
+
+    qDebug() << "TLS TCP server listening on"
+             << m_server.serverAddress() << ":" << m_server.serverPort();
 
     return true;
 }
 
 void TcpServer::stop()
 {
-    if (!m_server.isListening()) {
-        qDebug() << "TCP server already stopped";
-        return;
-    }
-
-    // Disconnect all clients
-    for (QTcpSocket *client : std::as_const(m_clients)) {
-        if (client->state() == QAbstractSocket::ConnectedState) {
+    for (QSslSocket *client : std::as_const(m_clients)) {
+        client->disconnect(this);
+        if (client->state() == QAbstractSocket::ConnectedState)
             client->disconnectFromHost();
-        }
         client->deleteLater();
     }
 
     m_clients.clear();
     m_buffers.clear();
-
-    // Stop listening
     m_server.close();
 
-    qDebug() << "TCP server stopped listening";
+    qDebug() << "TLS TCP server stopped";
 }
 
 void TcpServer::onNewConnection()
 {
     while (m_server.hasPendingConnections()) {
-        QTcpSocket *client = m_server.nextPendingConnection();
+        auto *client = qobject_cast<QSslSocket*>(m_server.nextPendingConnection());
+        if (!client)
+            continue;
 
-        qDebug() << "Client connected: "
-                 << client->peerAddress() << " : "
-                 << client->peerPort();
+        qDebug() << "TLS client connected:"
+                 << client->peerAddress() << ":" << client->peerPort();
 
         m_clients.insert(client);
         m_buffers.insert(client, QByteArray());
 
-        connect(client, &QTcpSocket::readyRead, this, &TcpServer::onClientReadyRead);
-        connect(client, &QTcpSocket::disconnected, this, &TcpServer::onClientDisconnected);
+        connect(client, &QSslSocket::readyRead,
+                this, &TcpServer::onClientReadyRead);
+        connect(client, &QSslSocket::disconnected,
+                this, &TcpServer::onClientDisconnected);
+        connect(client, &QSslSocket::sslErrors,
+                this, [](const QList<QSslError> &errors) {
+                    for (const auto &error : errors)
+                        qWarning() << "[TLS]" << error.errorString();
+                });
     }
 }
 
-// read bytes - split into complete packets - parse the packet - emit the parsed message
 void TcpServer::onClientReadyRead()
 {
-    auto *client = qobject_cast<QTcpSocket*>(sender());
+    auto *client = qobject_cast<QSslSocket*>(sender());
     if (!client)
         return;
 
-    // Append incoming bytes to this client's buffer
     m_buffers[client].append(client->readAll());
 
-    // Process complete newline-delimited messages
     while (true) {
-        int newlineIndex = m_buffers[client].indexOf('\n');
+        const int newlineIndex = m_buffers[client].indexOf('\n');
         if (newlineIndex == -1)
             break;
 
-        QByteArray line = m_buffers[client].left(newlineIndex).trimmed();
+        const QByteArray line = m_buffers[client].left(newlineIndex).trimmed();
         m_buffers[client].remove(0, newlineIndex + 1);
 
         if (line.isEmpty())
             continue;
 
-        qDebug() << "Received from"
-                 << client->peerAddress().toString()
-                 << ":" << line;
+        qDebug() << "Received over TLS from"
+                 << client->peerAddress().toString() << ":" << line;
 
-        Message msg = MessageParser::parse(line);
+        const Message msg = MessageParser::parse(line);
         if (msg.type.isEmpty()) {
             qWarning() << "Invalid packet:" << line;
             continue;
@@ -109,14 +141,13 @@ void TcpServer::onClientReadyRead()
 
 void TcpServer::onClientDisconnected()
 {
-    auto *client = qobject_cast<QTcpSocket*>(sender());
-    if (!client) return;
+    auto *client = qobject_cast<QSslSocket*>(sender());
+    if (!client)
+        return;
 
-    qDebug() << "Client disconnected:" << client->peerAddress().toString()
-             << " : " << client->peerPort();
+    qDebug() << "TLS client disconnected:" << client->peerAddress().toString();
 
     m_clients.remove(client);
     m_buffers.remove(client);
-
     client->deleteLater();
 }

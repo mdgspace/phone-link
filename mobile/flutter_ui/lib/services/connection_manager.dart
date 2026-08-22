@@ -10,6 +10,27 @@ import '../data/local_device.dart';
 import '../data/paired_device.dart';
 import 'pairing_service.dart';
 
+const String _phoneLinkServerCertificate = r'''-----BEGIN CERTIFICATE-----
+MIIDGTCCAgGgAwIBAgIUBilJq5FSq/GqvtH4ubaZdl6IuzUwDQYJKoZIhvcNAQEL
+BQAwHDEaMBgGA1UEAwwRUGhvbmVMaW5rIERlc2t0b3AwHhcNMjYwODIyMTQ1MzIx
+WhcNMzYwODE5MTQ1MzIxWjAcMRowGAYDVQQDDBFQaG9uZUxpbmsgRGVza3RvcDCC
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALn0OT0iXli3rYTWVkh/HIvf
+MMRwefOHJOASyPMFwRIFXSW3sh6EMc6S+/wZk1NU4hDagid3eKkANtSSFqpIqcaD
+oLbBkdyGdrM3vdTu3+fdT3fuPriEqPummCQozS77GDJ2PSC2M/OMGcp3sS4JDJNW
+LKR0UwowXn95krHLLSUOgFAOSpNE4PdxgczJcsBnfLTDfwWI4STDjJQkC8fNYO02
+xXigZs0H+RXb6Nmc+CQ9XEjSoV+SzoN5R95f44xD5WOyDNva3OSyY5PT7i3VxtdU
+d9H47hpliThFH4n6nKTB5JoRROdetHPZBAM7dF0AaLz5eGFaHaStV+gCaD18QisC
+AwEAAaNTMFEwHQYDVR0OBBYEFD1Nn/eMsBXsJToK3IREZHx0sRZoMB8GA1UdIwQY
+MBaAFD1Nn/eMsBXsJToK3IREZHx0sRZoMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
+hvcNAQELBQADggEBAJ/6EhywwKd0lq/7Ipge4bB20DTnq6UwYIrGYCgtYGqNc3g5
+EFzeaLp9BkwXtb1t43D5iBtg7KeOBiu28+TytSOAtr5t/oCLV+dhVbnvt6+ZEbGB
++wJjrVISgzmnVFPs9yFl39xKABMqvVRr2xoTfmx2MtX4Gq4TbtLICdCjKempyu4B
+XccmWXeS6pkCOnVClXvgXXWMJPUBXcgOK8+6wxBYq+bUUe0YaO3n9+9IAPAcoy6X
+OQPWKaBu3m9kyHVGFwmX6jdTyxOC0dIXPGlg8rvkUnrQKv2GWmPAqJDEsiIoFQ7N
+wRYco7dwI8jzL1NYw2H1wS2AWkuWS7Psv8gqmhY=
+-----END CERTIFICATE-----
+''';
+
 enum ConnectionState {
   disconnected,
   connecting,
@@ -52,10 +73,15 @@ class ConnectionManager extends ChangeNotifier {
     _setState(ConnectionState.connecting);
 
     try {
-      _socket = await Socket.connect(
+      final securityContext = SecurityContext(withTrustedRoots: false)
+      ..setTrustedCertificatesBytes(Uint8List.fromList(utf8.encode(_phoneLinkServerCertificate)));
+
+      _socket = await SecureSocket.connect(
         device.ipv4.address,
         device.port,
         timeout: const Duration(seconds: 6),
+        context: securityContext,
+        onBadCertificate: (certificate) => certificate.pem.trim() == _phoneLinkServerCertificate.trim(),
       );
       _socket!.setOption(SocketOption.tcpNoDelay, true);
 

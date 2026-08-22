@@ -7,6 +7,44 @@ class PhoneLinkNotificationService : NotificationListenerService() {
 
     companion object {
         var handler: NotificationHandler? = null
+            set(value) {
+                field = value
+            }
+
+        private var instance: PhoneLinkNotificationService? = null
+
+        /**
+         * Cancels the Android notification identified by StatusBarNotification.key.
+         * Returns false if the listener service is not currently connected.
+         */
+        fun cancelNotification(key: String): Boolean {
+            val service = instance ?: return false
+            return try {
+                service.cancelNotification(key)
+                true
+            } catch (_: Exception) {
+                false
+            }
+        }
+    }
+
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        instance = this
+    }
+
+    override fun onListenerDisconnected() {
+        if (instance === this) {
+            instance = null
+        }
+        super.onListenerDisconnected()
+    }
+
+    override fun onDestroy() {
+        if (instance === this) {
+            instance = null
+        }
+        super.onDestroy()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {

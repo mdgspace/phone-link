@@ -353,6 +353,55 @@ void Backend::onNotificationDismissed(const QString &notificationId)
     m_notificationModel.removeNotification(notificationId);
 }
 
+// ======================
+// Phone-side commands
+// ======================
+
+void Backend::replyToSms(const QString &address, const QString &body)
+{
+    if (!m_activeClient || !m_peerConnected || address.trimmed().isEmpty() || body.isEmpty())
+        return;
+
+    Message msg;
+    msg.type = ProtocolTypes::SMS_SEND;
+    msg.from = m_deviceId;
+    msg.payload = QJsonObject{
+        {"address", address},
+        {"body", body}
+    };
+
+    MessageParser::send(m_activeClient, msg);
+    qDebug() << "[Backend] Sent SMS command to phone:" << address;
+}
+
+void Backend::setPhoneClipboard(const QString &text)
+{
+    if (!m_activeClient || !m_peerConnected || text.isEmpty())
+        return;
+
+    Message msg;
+    msg.type = ProtocolTypes::CLIPBOARD_PUSH;
+    msg.from = m_deviceId;
+    msg.payload = QJsonObject{{"text", text}};
+
+    MessageParser::send(m_activeClient, msg);
+    qDebug() << "[Backend] Sent clipboard to phone";
+}
+
+void Backend::dismissPhoneNotification(const QString &notificationId)
+{
+    if (!m_activeClient || !m_peerConnected || notificationId.isEmpty())
+        return;
+
+    Message msg;
+    msg.type = ProtocolTypes::NOTIFICATION_DISMISS;
+    msg.from = m_deviceId;
+    msg.payload = QJsonObject{{"key", notificationId}};
+
+    MessageParser::send(m_activeClient, msg);
+    qDebug() << "[Backend] Requested notification dismissal:" << notificationId;
+}
+
 // Replies
 void Backend::onDisconnected()
 {

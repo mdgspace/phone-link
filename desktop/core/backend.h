@@ -118,6 +118,11 @@ public:
     Q_INVOKABLE void confirmPairing();
     Q_INVOKABLE void rejectPairing();
 
+    // Phone-side commands
+    Q_INVOKABLE void replyToSms(const QString &address, const QString &body);
+    Q_INVOKABLE void setPhoneClipboard(const QString &text);
+    Q_INVOKABLE void dismissPhoneNotification(const QString &notificationId);
+
     /*
      * ================================
      * PROPERTY GETTERS

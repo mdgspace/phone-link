@@ -25,17 +25,30 @@ class SmsHandler(
     private val smsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
+
             val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-            messages.forEach { msg ->
-                val map = mapOf(
-                    "id" to System.currentTimeMillis().toString(),
-                    "address" to (msg.originatingAddress ?: ""),
-                    "body" to (msg.messageBody ?: ""),
-                    "is_incoming" to true,
-                    "timestamp" to (msg.timestampMillis / 1000)
-                )
-                channel.invokeMethod("onSmsReceived", map)
+
+            if (messages.isEmpty()) return
+
+            val first = messages.first()
+
+            val address = first.originatingAddress ?: ""
+
+            val body = messages.joinToString(separator = "") { message ->
+                message.messageBody ?: ""
             }
+
+            val timestamp = first.timestampMillis / 1000
+
+            val map = mapOf(
+                "id" to "${timestamp}_${address.hashCode()}",
+                "address" to address,
+                "body" to body,
+                "is_incoming" to true,
+                "timestamp" to timestamp
+            )
+
+            channel.invokeMethod("onSmsReceived", map)
         }
     }
 

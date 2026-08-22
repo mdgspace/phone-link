@@ -2,8 +2,8 @@
 #define TCPSERVER_H
 
 #include <QObject>
-#include <QTcpServer>
-#include <QTcpSocket>
+#include <QSslServer>
+#include <QSslSocket>
 #include <QSet>
 #include <QHash>
 #include "../protocol/message.h"
@@ -23,9 +23,9 @@ private slots:
     void onClientDisconnected();
 
 private:
-    QTcpServer m_server;
-    QSet<QTcpSocket*> m_clients;                // track connected clients
-    QHash<QTcpSocket*, QByteArray> m_buffers;   // per client receive buffers
+    QSslServer m_server;
+    QSet<QSslSocket*> m_clients;
+    QHash<QSslSocket*, QByteArray> m_buffers;
 
 signals:
     void messageReceived(QTcpSocket *client, const Message &message);

@@ -16,6 +16,7 @@ class NotificationService extends ChangeNotifier {
   bool _listenerActive = false;
 
   NotificationService(this._connection, this._localConfig) {
+    _connection.packets.listen(_onPacket);
     _channel.setMethodCallHandler(_onNativeCall);
   }
 
@@ -46,6 +47,19 @@ class NotificationService extends ChangeNotifier {
 
     _notifications.removeAt(index);
     notifyListeners();
+  }
+
+  Future<void> _onPacket(Packet packet) async {
+    if (packet.type != PacketType.notificationDismiss) return;
+
+    final key = packet.payload['key'] as String? ?? '';
+    if (key.isEmpty) return;
+
+    try {
+      await _channel.invokeMethod('dismissNotification', {'key': key});
+    } catch (e) {
+      debugPrint('dismissNotification error: $e');
+    }
   }
 
   Future<dynamic> _onNativeCall(MethodCall call) async {

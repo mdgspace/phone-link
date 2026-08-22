@@ -49,6 +49,8 @@ inline const QString NOTIFICATION_POSTED =
 inline const QString NOTIFICATION_DISMISSED =
     "notification_dismissed";
 
+inline const QString NOTIFICATION_DISMISS =
+    "notification_dismiss";
 // ==========================
 // File Transfer
 // ==========================

@@ -461,6 +461,23 @@ Window {
                                             wrapMode: Text.WordWrap
                                             Layout.fillWidth: true
                                         }
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            TextField {
+                                                id: replyField
+                                                Layout.fillWidth: true
+                                                placeholderText: "Reply by SMS..."
+                                            }
+                                            Button {
+                                                text: "Send"
+                                                enabled: Backend.peerConnected && replyField.text.length > 0
+                                                onClicked: {
+                                                    Backend.replyToSms(model.address, replyField.text)
+                                                    replyField.clear()
+                                                }
+                                            }
+                                        }
                                     }
                                 }
 
@@ -530,6 +547,13 @@ Window {
                                             wrapMode: Text.WordWrap
                                             Layout.fillWidth: true
                                         }
+
+                                        Button {
+                                            text: "Dismiss on phone"
+                                            Layout.alignment: Qt.AlignRight
+                                            enabled: Backend.peerConnected
+                                            onClicked: Backend.dismissPhoneNotification(model.notificationId)
+                                        }
                                     }
                                 }
 
@@ -544,11 +568,35 @@ Window {
 
                         // 3 Clipboard
                         Item {
-                            ListView {
+                            ColumnLayout {
                                 anchors.fill: parent
-                                clip: true
-                                spacing: 8
-                                model: Backend.clipboardModel
+                                spacing: 12
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+
+                                    TextField {
+                                        id: phoneClipboardField
+                                        Layout.fillWidth: true
+                                        placeholderText: "Text to put on phone clipboard..."
+                                    }
+
+                                    Button {
+                                        text: "Send to phone"
+                                        enabled: Backend.peerConnected && phoneClipboardField.text.length > 0
+                                        onClicked: {
+                                            Backend.setPhoneClipboard(phoneClipboardField.text)
+                                            phoneClipboardField.clear()
+                                        }
+                                    }
+                                }
+
+                                ListView {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    clip: true
+                                    spacing: 8
+                                    model: Backend.clipboardModel
 
                                 delegate: Rectangle {
                                     width: ListView.view.width
@@ -574,6 +622,7 @@ Window {
                                     text: "No clipboard items received yet"
                                     color: "#65707d"
                                 }
+                            }
                             }
                         }
 
