@@ -20,6 +20,7 @@ class SmsHandler(
     messenger: BinaryMessenger
 ) {
     private val channel = MethodChannel(messenger, "com.example.flutter_ui/sms")
+    private var receiverRegistered = false
 
     private val smsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -39,10 +40,13 @@ class SmsHandler(
     }
 
     init {
-        activity.registerReceiver(
+        ContextCompat.registerReceiver(
+            activity,
             smsReceiver,
-            IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION)
+            IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION),
+            ContextCompat.RECEIVER_EXPORTED
         )
+        receiverRegistered = true
 
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -87,6 +91,18 @@ class SmsHandler(
                 else -> result.notImplemented()
             }
         }
+    }
+
+    fun close() {
+        if (receiverRegistered) {
+            try {
+                activity.unregisterReceiver(smsReceiver)
+            } catch (_: Exception) {
+                // Receiver was already unregistered or activity is shutting down.
+            }
+            receiverRegistered = false
+        }
+        channel.setMethodCallHandler(null)
     }
 
     private fun readAllSms(): List<Map<String, Any>> {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import '../services/clipboard_service.dart';
 
 import '../services/connection_manager.dart' as cm;
 import '../services/mdns_discovery.dart';
@@ -135,17 +137,21 @@ class _ConnectedView extends StatelessWidget {
           style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
         ),
         const SizedBox(height: 20),
-        Row(children: [
-          Icon(Icons.circle, color: Colors.green, size: 14),
-          const SizedBox(width: 8),
-          const Text('Connected'),
-        ]),
+        Row(
+          children: [
+            Icon(Icons.circle, color: Colors.green, size: 14),
+            const SizedBox(width: 8),
+            const Text('Connected'),
+          ],
+        ),
         const SizedBox(height: 8),
-        Row(children: [
-          Icon(Icons.lock_outline, size: 14),
-          const SizedBox(width: 8),
-          Text('Platform: ${device.platform}'),
-        ]),
+        Row(
+          children: [
+            Icon(Icons.lock_outline, size: 14),
+            const SizedBox(width: 8),
+            Text('Platform: ${device.platform}'),
+          ],
+        ),
         const Spacer(),
         TextButton(
           onPressed: () => showPermissionsSheet(context),
@@ -333,7 +339,9 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 15),
+                          vertical: 10,
+                          horizontal: 15,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -346,7 +354,9 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
                               _ipAddress ?? 'Fetching IP...',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  color: Colors.grey.shade600, fontSize: 12),
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Text('Port : ${controller.config.port}'),
@@ -402,23 +412,24 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
   }
 
   void _showEditDialog(
-      BuildContext context, MdnsRegistrationController controller) {
-    final nameCtrl =
-        TextEditingController(text: controller.config.deviceName);
+    BuildContext context,
+    MdnsRegistrationController controller,
+  ) {
+    final nameCtrl = TextEditingController(text: controller.config.deviceName);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Edit Device Name'),
         content: TextField(
           controller: nameCtrl,
-          decoration:
-              const InputDecoration(labelText: 'Device name'),
+          decoration: const InputDecoration(labelText: 'Device name'),
           autofocus: true,
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               controller.updateDeviceName(nameCtrl.text.trim());
@@ -464,9 +475,7 @@ class _FeatureRow extends StatelessWidget {
             enabled: enabled,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const NotificationsScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
             ),
           ),
           const SizedBox(width: 6),
@@ -474,9 +483,34 @@ class _FeatureRow extends StatelessWidget {
             icon: Icons.content_copy,
             label: 'Clipboard',
             enabled: enabled,
-            onTap: () {
+            onTap: () async {
+              final clipboard = context.read<ClipboardService>();
+
+              final data = await Clipboard.getData(Clipboard.kTextPlain);
+              final text = data?.text?.trim();
+
+              if (!context.mounted) return;
+
+              if (!connection.isConnected) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Not connected to a desktop')),
+                );
+                return;
+              }
+
+              if (text == null || text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Clipboard is empty')),
+                );
+                return;
+              }
+
+              await clipboard.pushToDesktop();
+
+              if (!context.mounted) return;
+
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Clipboard synced')),
+                const SnackBar(content: Text('Clipboard sent to desktop')),
               );
             },
           ),
@@ -517,18 +551,14 @@ class _FeatureChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: enabled
-                ? Colors.blue.shade50
-                : Colors.grey.shade200,
+            color: enabled ? Colors.blue.shade50 : Colors.grey.shade200,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
             children: [
               Icon(
                 icon,
-                color: enabled
-                    ? Colors.blue.shade700
-                    : Colors.grey.shade400,
+                color: enabled ? Colors.blue.shade700 : Colors.grey.shade400,
                 size: 21,
               ),
               const SizedBox(height: 4),
@@ -536,9 +566,7 @@ class _FeatureChip extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 10,
-                  color: enabled
-                      ? Colors.blue.shade700
-                      : Colors.grey.shade400,
+                  color: enabled ? Colors.blue.shade700 : Colors.grey.shade400,
                 ),
               ),
             ],
@@ -567,9 +595,7 @@ class _DiscoverButton extends StatelessWidget {
 }
 
 ButtonStyle _btnStyle(Color color) => TextButton.styleFrom(
-      backgroundColor: color,
-      foregroundColor: Colors.black,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    );
+  backgroundColor: color,
+  foregroundColor: Colors.black,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+);

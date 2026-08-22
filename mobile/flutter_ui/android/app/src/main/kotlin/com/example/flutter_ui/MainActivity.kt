@@ -26,6 +26,11 @@ class MainActivity : FlutterActivity() {
         startForegroundServiceIfNeeded()
     }
 
+    override fun onDestroy() {
+        smsHandler.close()
+        super.onDestroy()
+    }
+
     private fun startForegroundServiceIfNeeded() {
         val intent = Intent(this, PhoneLinkService::class.java)
         startForegroundService(intent)
