@@ -206,8 +206,7 @@ class FileTransferService extends ChangeNotifier {
     }
 
     _incomingBuffer[id]?.addAll(data);
-    _transfers[id]?.bytesTransferred =
-        _incomingBuffer[id]?.length ?? 0;
+    _transfers[id]?.bytesTransferred = _incomingBuffer[id]?.length ?? 0;
     notifyListeners();
   }
 

@@ -332,7 +332,7 @@ class _RegistrationPanelState extends State<_RegistrationPanel> {
                               : Colors.red,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
