@@ -18,6 +18,10 @@ class NotificationModel : public QAbstractListModel
 {
     Q_OBJECT
 
+    Q_PROPERTY(QString latestAppName READ latestAppName NOTIFY latestChanged)
+    Q_PROPERTY(QString latestTitle READ latestTitle NOTIFY latestChanged)
+    Q_PROPERTY(QString latestText READ latestText NOTIFY latestChanged)
+
 public:
     enum Roles {
         IdRole = Qt::UserRole + 1,
@@ -34,6 +38,10 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
 
+    QString latestAppName() const;
+    QString latestTitle() const;
+    QString latestText() const;
+
     void addOrUpdateNotification(const QString &id,
                                  const QString &appPackage,
                                  const QString &appName,
@@ -42,6 +50,9 @@ public:
                                  qint64 postedAt);
 
     void removeNotification(const QString &id);
+
+signals:
+        void latestChanged();
 
 private:
     QList<NotificationItem> m_items;

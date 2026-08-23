@@ -45,3 +45,11 @@ void ClipboardModel::addClipboard(const QString &text)
 
     endInsertRows();
 }
+
+QString ClipboardModel::latestText() const
+{
+    if (m_items.isEmpty())
+        return {};
+
+    return m_items.last().text;
+}

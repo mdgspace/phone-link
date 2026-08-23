@@ -4,6 +4,7 @@ import QtQuick.Layouts
 
 Window {
     id: root
+
     width: 1120
     height: 720
     minimumWidth: 900
@@ -23,15 +24,23 @@ Window {
     }
 
     function statusColor() {
-        if (Backend.peerConnected) return "#43d17a"
-        if (Backend.serverRunning) return "#f2b84b"
+        if (Backend.peerConnected)
+            return "#43d17a"
+        if (Backend.serverRunning)
+            return "#f2b84b"
         return "#8b95a1"
     }
 
     function formatBytes(bytes) {
-        if (bytes < 1024) return bytes + " B"
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
-        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+        if (bytes < 1024)
+            return bytes + " B"
+
+        if (bytes < 1024 * 1024)
+            return (bytes / 1024).toFixed(1) + " KB"
+
+        if (bytes < 1024 * 1024 * 1024)
+            return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+
         return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB"
     }
 
@@ -47,7 +56,10 @@ Window {
             anchors.fill: parent
             spacing: 0
 
-            // Sidebar
+            // ============================================================
+            // SIDEBAR
+            // ============================================================
+
             Rectangle {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 225
@@ -80,14 +92,18 @@ Window {
 
                         ColumnLayout {
                             spacing: 1
+
                             Text {
                                 text: "PhoneLink"
                                 color: "#f2f4f7"
                                 font.pixelSize: 17
                                 font.bold: true
                             }
+
                             Text {
-                                text: Backend.peerConnected ? "Connected" : "Desktop"
+                                text: Backend.peerConnected
+                                      ? "Connected"
+                                      : "Desktop"
                                 color: "#7f8995"
                                 font.pixelSize: 11
                             }
@@ -111,9 +127,12 @@ Window {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 44
                             radius: 9
+
                             color: root.currentPage === index
                                    ? "#202b3b"
-                                   : navMouse.containsMouse ? "#191f26" : "transparent"
+                                   : navMouse.containsMouse
+                                     ? "#191f26"
+                                     : "transparent"
 
                             RowLayout {
                                 anchors.fill: parent
@@ -123,7 +142,9 @@ Window {
 
                                 Text {
                                     text: modelData.icon
-                                    color: root.currentPage === index ? "#66a0ff" : "#8a95a1"
+                                    color: root.currentPage === index
+                                           ? "#66a0ff"
+                                           : "#8a95a1"
                                     font.pixelSize: 17
                                     Layout.preferredWidth: 22
                                     horizontalAlignment: Text.AlignHCenter
@@ -131,7 +152,9 @@ Window {
 
                                 Text {
                                     text: modelData.label
-                                    color: root.currentPage === index ? "white" : "#aeb6c0"
+                                    color: root.currentPage === index
+                                           ? "white"
+                                           : "#aeb6c0"
                                     font.pixelSize: 13
                                     Layout.fillWidth: true
                                 }
@@ -147,7 +170,9 @@ Window {
                         }
                     }
 
-                    Item { Layout.fillHeight: true }
+                    Item {
+                        Layout.fillHeight: true
+                    }
 
                     Rectangle {
                         Layout.fillWidth: true
@@ -193,7 +218,10 @@ Window {
                 }
             }
 
-            // Main area
+            // ============================================================
+            // MAIN AREA
+            // ============================================================
+
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -204,6 +232,10 @@ Window {
                     anchors.margins: 28
                     spacing: 20
 
+                    // ====================================================
+                    // HEADER
+                    // ====================================================
+
                     RowLayout {
                         Layout.fillWidth: true
 
@@ -211,8 +243,15 @@ Window {
                             spacing: 3
 
                             Text {
-                                text: ["Overview", "Messages", "Notifications",
-                                       "Clipboard", "Files", "Connection"][root.currentPage]
+                                text: [
+                                    "Overview",
+                                    "Messages",
+                                    "Notifications",
+                                    "Clipboard",
+                                    "Files",
+                                    "Connection"
+                                ][root.currentPage]
+
                                 color: "#f1f3f5"
                                 font.pixelSize: 25
                                 font.bold: true
@@ -227,12 +266,15 @@ Window {
                                     "Files received from your phone.",
                                     "Manage discovery, pairing and the TCP server."
                                 ][root.currentPage]
+
                                 color: "#7f8995"
                                 font.pixelSize: 12
                             }
                         }
 
-                        Item { Layout.fillWidth: true }
+                        Item {
+                            Layout.fillWidth: true
+                        }
 
                         Rectangle {
                             Layout.preferredWidth: 180
@@ -261,13 +303,21 @@ Window {
                         }
                     }
 
+                    // ====================================================
+                    // PAGES
+                    // ====================================================
+
                     StackLayout {
                         id: pages
+
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         currentIndex: root.currentPage
 
-                        // 0 Overview
+                        // =================================================
+                        // 0 — OVERVIEW
+                        // =================================================
+
                         Flickable {
                             contentWidth: width
                             contentHeight: overview.implicitHeight
@@ -275,51 +325,403 @@ Window {
 
                             ColumnLayout {
                                 id: overview
+
                                 width: parent.width
                                 spacing: 14
+
+                                // =================================================
+                                // SUMMARY CARDS
+                                // =================================================
 
                                 RowLayout {
                                     Layout.fillWidth: true
                                     spacing: 12
 
-                                    Repeater {
-                                        model: [
-                                            {title: "Connection", value: Backend.peerConnected ? "Connected" : "Offline"},
-                                            {title: "Messages", value: Backend.messageModel ? Backend.messageModel.count : 0},
-                                            {title: "Notifications", value: Backend.notificationModel ? Backend.notificationModel.count : 0},
-                                            {title: "Clipboard", value: Backend.clipboardModel ? Backend.clipboardModel.count : 0},
-                                            {title: "Files", value: Backend.sharedFilesModel ? Backend.sharedFilesModel.count : 0}
-                                        ]
+                                    // CONNECTION
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 100
+                                        radius: 11
+                                        color: "#12171d"
+                                        border.color: "#202731"
 
-                                        delegate: Rectangle {
-                                            required property var modelData
-                                            Layout.fillWidth: true
-                                            Layout.preferredHeight: 92
-                                            radius: 11
-                                            color: "#12171d"
-                                            border.color: "#202731"
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 14
+                                            spacing: 6
 
-                                            Column {
-                                                anchors.fill: parent
-                                                anchors.margins: 14
-                                                spacing: 8
+                                            Text {
+                                                text: "Connection"
+                                                color: "#7f8995"
+                                                font.pixelSize: 11
+                                            }
+
+                                            Text {
+                                                text: Backend.peerConnected
+                                                      ? "Connected"
+                                                      : "Offline"
+
+                                                color: Backend.peerConnected
+                                                       ? "#43d17a"
+                                                       : "#8b95a1"
+
+                                                font.pixelSize: 20
+                                                font.bold: true
+                                            }
+
+                                            Text {
+                                                text: Backend.peerConnected
+                                                      ? Backend.peerDeviceName
+                                                      : "No phone connected"
+
+                                                color: "#65707d"
+                                                font.pixelSize: 10
+                                                elide: Text.ElideRight
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+
+                                    // MESSAGES
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 100
+                                        radius: 11
+                                        color: "#12171d"
+                                        border.color: "#202731"
+
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 14
+                                            spacing: 5
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
 
                                                 Text {
-                                                    text: modelData.title
+                                                    text: "Messages"
                                                     color: "#7f8995"
                                                     font.pixelSize: 11
                                                 }
 
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                }
+
                                                 Text {
-                                                    text: modelData.value
-                                                    color: "#edf0f3"
-                                                    font.pixelSize: 20
+                                                    text: Backend.messageModel
+                                                          ? Backend.messageModel.count
+                                                          : 0
+
+                                                    color: "#66a0ff"
+                                                    font.pixelSize: 11
                                                     font.bold: true
                                                 }
                                             }
+
+                                            Text {
+                                                visible: Backend.messageModel &&
+                                                         Backend.messageModel.count > 0
+
+                                                text: Backend.messageModel.latestAddress
+                                                color: "#edf0f3"
+                                                font.pixelSize: 13
+                                                font.bold: true
+                                                elide: Text.ElideRight
+                                                Layout.fillWidth: true
+                                            }
+
+                                            Text {
+                                                visible: Backend.messageModel &&
+                                                         Backend.messageModel.count > 0
+
+                                                text: Backend.messageModel.latestBody
+                                                color: "#89939f"
+                                                font.pixelSize: 11
+                                                elide: Text.ElideRight
+                                                maximumLineCount: 1
+                                                Layout.fillWidth: true
+                                            }
+
+                                            Text {
+                                                visible: !Backend.messageModel ||
+                                                         Backend.messageModel.count === 0
+
+                                                text: "No messages yet"
+                                                color: "#65707d"
+                                                font.pixelSize: 11
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.selectPage(1)
+                                        }
+                                    }
+
+                                    // NOTIFICATIONS
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 100
+                                        radius: 11
+                                        color: "#12171d"
+                                        border.color: "#202731"
+
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 14
+                                            spacing: 5
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+
+                                                Text {
+                                                    text: "Notifications"
+                                                    color: "#7f8995"
+                                                    font.pixelSize: 11
+                                                }
+
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                Text {
+                                                    text: Backend.notificationModel
+                                                          ? Backend.notificationModel.count
+                                                          : 0
+
+                                                    color: "#66a0ff"
+                                                    font.pixelSize: 11
+                                                    font.bold: true
+                                                }
+                                            }
+
+                                            Text {
+                                                visible: Backend.notificationModel &&
+                                                         Backend.notificationModel.count > 0
+
+                                                text: Backend.notificationModel.latestAppName
+                                                color: "#edf0f3"
+                                                font.pixelSize: 13
+                                                font.bold: true
+                                                elide: Text.ElideRight
+                                                Layout.fillWidth: true
+                                            }
+
+                                            Text {
+                                                visible: Backend.notificationModel &&
+                                                         Backend.notificationModel.count > 0
+
+                                                text: Backend.notificationModel.latestTitle ||
+                                                      Backend.notificationModel.latestText
+
+                                                color: "#89939f"
+                                                font.pixelSize: 11
+                                                elide: Text.ElideRight
+                                                maximumLineCount: 1
+                                                Layout.fillWidth: true
+                                            }
+
+                                            Text {
+                                                visible: !Backend.notificationModel ||
+                                                         Backend.notificationModel.count === 0
+
+                                                text: "No notifications yet"
+                                                color: "#65707d"
+                                                font.pixelSize: 11
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.selectPage(2)
                                         }
                                     }
                                 }
+
+                                // =================================================
+                                // SECOND ROW
+                                // =================================================
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 12
+
+                                    // CLIPBOARD
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 145
+                                        radius: 12
+                                        color: "#12171d"
+                                        border.color: "#202731"
+
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 18
+                                            spacing: 9
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+
+                                                Text {
+                                                    text: "Clipboard"
+                                                    color: "#e8ebef"
+                                                    font.pixelSize: 15
+                                                    font.bold: true
+                                                }
+
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                Text {
+                                                    text: Backend.clipboardModel
+                                                          ? Backend.clipboardModel.count
+                                                          : 0
+
+                                                    color: "#66a0ff"
+                                                    font.pixelSize: 11
+                                                    font.bold: true
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                Layout.fillWidth: true
+                                                Layout.fillHeight: true
+                                                radius: 8
+                                                color: "#0e1318"
+
+                                                Text {
+                                                    anchors.fill: parent
+                                                    anchors.margins: 12
+
+                                                    visible: Backend.clipboardModel &&
+                                                             Backend.clipboardModel.count > 0
+
+                                                    text: Backend.clipboardModel.latestText
+
+                                                    color: "#b8c0ca"
+                                                    font.pixelSize: 12
+                                                    wrapMode: Text.WordWrap
+                                                    maximumLineCount: 4
+                                                    elide: Text.ElideRight
+                                                }
+
+                                                Text {
+                                                    anchors.centerIn: parent
+
+                                                    visible: !Backend.clipboardModel ||
+                                                             Backend.clipboardModel.count === 0
+
+                                                    text: "No clipboard items yet"
+                                                    color: "#65707d"
+                                                    font.pixelSize: 11
+                                                }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.selectPage(3)
+                                        }
+                                    }
+
+                                    // FILES
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 145
+                                        radius: 12
+                                        color: "#12171d"
+                                        border.color: "#202731"
+
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 18
+                                            spacing: 9
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+
+                                                Text {
+                                                    text: "Files"
+                                                    color: "#e8ebef"
+                                                    font.pixelSize: 15
+                                                    font.bold: true
+                                                }
+
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                Text {
+                                                    text: Backend.sharedFilesModel
+                                                          ? Backend.sharedFilesModel.count
+                                                          : 0
+
+                                                    color: "#66a0ff"
+                                                    font.pixelSize: 11
+                                                    font.bold: true
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                Layout.fillWidth: true
+                                                Layout.fillHeight: true
+                                                radius: 8
+                                                color: "#0e1318"
+
+                                                ColumnLayout {
+                                                    anchors.fill: parent
+                                                    anchors.margins: 12
+                                                    spacing: 4
+
+                                                    Text {
+                                                        visible: Backend.sharedFilesModel &&
+                                                                 Backend.sharedFilesModel.count > 0
+
+                                                        text: Backend.sharedFilesModel.latestFileName
+                                                        color: "#e1e5e9"
+                                                        font.pixelSize: 13
+                                                        font.bold: true
+                                                        elide: Text.ElideRight
+                                                        Layout.fillWidth: true
+                                                    }
+
+                                                    Text {
+                                                        visible: Backend.sharedFilesModel &&
+                                                                 Backend.sharedFilesModel.count > 0
+
+                                                        text: Backend.sharedFilesModel.latestFileSize
+                                                        color: "#7f8995"
+                                                        font.pixelSize: 11
+                                                    }
+
+                                                    Text {
+                                                        visible: !Backend.sharedFilesModel ||
+                                                                 Backend.sharedFilesModel.count === 0
+
+                                                        text: "No files received yet"
+                                                        color: "#65707d"
+                                                        font.pixelSize: 11
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.selectPage(4)
+                                        }
+                                    }
+                                }
+
+                                // =================================================
+                                // PHONE CONNECTION
+                                // =================================================
 
                                 Rectangle {
                                     Layout.fillWidth: true
@@ -349,8 +751,10 @@ Window {
 
                                         Text {
                                             text: Backend.peerConnected
-                                                  ? "Data can now be exchanged with " + Backend.peerDeviceName + "."
+                                                  ? "Data can now be exchanged with " +
+                                                    Backend.peerDeviceName + "."
                                                   : "Start the TCP server and advertise this desktop to accept a phone connection."
+
                                             color: "#89939f"
                                             font.pixelSize: 12
                                             wrapMode: Text.WordWrap
@@ -361,14 +765,20 @@ Window {
                                             spacing: 10
 
                                             Button {
-                                                text: Backend.serverRunning ? "Stop TCP server" : "Start TCP server"
+                                                text: Backend.serverRunning
+                                                      ? "Stop TCP server"
+                                                      : "Start TCP server"
+
                                                 onClicked: Backend.serverRunning
                                                            ? Backend.stopTcpServer()
                                                            : Backend.startTcpServer()
                                             }
 
                                             Button {
-                                                text: Backend.registering ? "Stop advertising" : "Advertise device"
+                                                text: Backend.registering
+                                                      ? "Stop advertising"
+                                                      : "Advertise device"
+
                                                 onClicked: Backend.registering
                                                            ? Backend.stopRegistration()
                                                            : Backend.registerOnMdns()
@@ -376,6 +786,10 @@ Window {
                                         }
                                     }
                                 }
+
+                                // =================================================
+                                // DEVICE
+                                // =================================================
 
                                 Rectangle {
                                     Layout.fillWidth: true
@@ -395,29 +809,36 @@ Window {
                                             font.pixelSize: 15
                                             font.bold: true
                                         }
+
                                         Text {
                                             text: Backend.deviceName
                                             color: "#c5cbd2"
                                             font.pixelSize: 13
                                         }
+
                                         Text {
                                             text: "_phonelink._tcp  •  TCP 4040"
                                             color: "#7f8995"
                                             font.pixelSize: 11
                                         }
+
                                         Text {
                                             visible: Backend.errorMessage.length > 0
                                             text: Backend.errorMessage
                                             color: "#ff7373"
                                             font.pixelSize: 11
                                             wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
                                         }
                                     }
                                 }
                             }
                         }
 
-                        // 1 Messages
+                        // =========================================================
+                        // 1 — MESSAGES
+                        // =========================================================
+
                         Item {
                             ListView {
                                 anchors.fill: parent
@@ -426,58 +847,156 @@ Window {
                                 model: Backend.messageModel
 
                                 delegate: Rectangle {
+                                    id: messageCard
+
+                                    required property var model
+
                                     width: ListView.view.width
                                     height: messageCol.implicitHeight + 28
-                                    radius: 10
-                                    color: "#12171d"
-                                    border.color: "#202731"
+                                    radius: 12
+
+                                    color: messageMouse.containsMouse
+                                           ? "#171e27"
+                                           : "#12171d"
+
+                                    border.color: messageMouse.containsMouse
+                                                  ? "#304052"
+                                                  : "#202731"
+
+                                    property bool expanded: false
+
+                                    Behavior on height {
+                                        NumberAnimation {
+                                            duration: 180
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
 
                                     ColumnLayout {
                                         id: messageCol
+
                                         anchors.fill: parent
                                         anchors.margins: 14
-                                        spacing: 5
+                                        spacing: 8
 
                                         RowLayout {
                                             Layout.fillWidth: true
+
                                             Text {
                                                 text: model.address
-                                                color: "#e6e9ed"
+                                                color: "#eef1f4"
                                                 font.pixelSize: 13
                                                 font.bold: true
+                                                Layout.fillWidth: true
+                                                elide: Text.ElideRight
                                             }
-                                            Item { Layout.fillWidth: true }
-                                            Text {
-                                                text: model.isIncoming ? "Received" : "Sent"
-                                                color: model.isIncoming ? "#43d17a" : "#66a0ff"
-                                                font.pixelSize: 10
+
+                                            Rectangle {
+                                                width: 58
+                                                height: 22
+                                                radius: 11
+                                                color: model.isIncoming
+                                                       ? "#173225"
+                                                       : "#182943"
+
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: model.isIncoming
+                                                          ? "Received"
+                                                          : "Sent"
+
+                                                    color: model.isIncoming
+                                                           ? "#55d98b"
+                                                           : "#72a9ff"
+
+                                                    font.pixelSize: 9
+                                                    font.bold: true
+                                                }
                                             }
                                         }
 
                                         Text {
+                                            id: messageBody
+
                                             text: model.body
-                                            color: "#aeb6c0"
+                                            color: "#b8c0ca"
                                             font.pixelSize: 12
                                             wrapMode: Text.WordWrap
                                             Layout.fillWidth: true
+
+                                            maximumLineCount:
+                                                messageCard.expanded ? -1 : 3
+
+                                            elide:
+                                                messageCard.expanded
+                                                ? Text.ElideNone
+                                                : Text.ElideRight
+                                        }
+
+                                        Text {
+                                            visible: model.body.length > 160
+
+                                            text: messageCard.expanded
+                                                  ? "Show less"
+                                                  : "Read more"
+
+                                            color: "#66a0ff"
+                                            font.pixelSize: 11
+                                            font.bold: true
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+
+                                                onClicked: {
+                                                    messageCard.expanded =
+                                                        !messageCard.expanded
+                                                }
+                                            }
                                         }
 
                                         RowLayout {
                                             Layout.fillWidth: true
+                                            spacing: 8
+
                                             TextField {
                                                 id: replyField
+
                                                 Layout.fillWidth: true
                                                 placeholderText: "Reply by SMS..."
+                                                font.pixelSize: 11
+
+                                                background: Rectangle {
+                                                    radius: 8
+                                                    color: "#0e1318"
+                                                    border.color: "#28313b"
+                                                }
                                             }
+
                                             Button {
                                                 text: "Send"
-                                                enabled: Backend.peerConnected && replyField.text.length > 0
+
+                                                enabled:
+                                                    Backend.peerConnected &&
+                                                    replyField.text.length > 0
+
                                                 onClicked: {
-                                                    Backend.replyToSms(model.address, replyField.text)
+                                                    Backend.replyToSms(
+                                                        model.address,
+                                                        replyField.text
+                                                    )
+
                                                     replyField.clear()
                                                 }
                                             }
                                         }
+                                    }
+
+                                    MouseArea {
+                                        id: messageMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        acceptedButtons: Qt.NoButton
                                     }
                                 }
 
@@ -490,7 +1009,10 @@ Window {
                             }
                         }
 
-                        // 2 Notifications
+                        // =========================================================
+                        // 2 — NOTIFICATIONS
+                        // =========================================================
+
                         Item {
                             ListView {
                                 anchors.fill: parent
@@ -499,40 +1021,88 @@ Window {
                                 model: Backend.notificationModel
 
                                 delegate: Rectangle {
+                                    id: notificationCard
+
+                                    required property var model
+
                                     width: ListView.view.width
                                     height: notificationCol.implicitHeight + 28
-                                    radius: 10
-                                    color: "#12171d"
-                                    border.color: "#202731"
+                                    radius: 12
+
+                                    color: notificationMouse.containsMouse
+                                           ? "#171e27"
+                                           : "#12171d"
+
+                                    border.color: notificationMouse.containsMouse
+                                                  ? "#304052"
+                                                  : "#202731"
+
+                                    property bool expanded: false
 
                                     ColumnLayout {
                                         id: notificationCol
+
                                         anchors.fill: parent
                                         anchors.margins: 14
-                                        spacing: 5
+                                        spacing: 8
 
                                         RowLayout {
                                             Layout.fillWidth: true
 
-                                            Text {
-                                                text: model.appName || model.appPackage
-                                                color: "#e6e9ed"
-                                                font.pixelSize: 11
-                                                font.bold: true
+                                            Rectangle {
+                                                Layout.preferredWidth: 30
+                                                Layout.preferredHeight: 30
+                                                radius: 8
+                                                color: "#202b38"
+
+                                                Text {
+                                                    anchors.centerIn: parent
+
+                                                    text: {
+                                                        var name =
+                                                            model.appName ||
+                                                            model.appPackage
+
+                                                        return name.length > 0
+                                                               ? name.charAt(0).toUpperCase()
+                                                               : "?"
+                                                    }
+
+                                                    color: "#78aaff"
+                                                    font.pixelSize: 13
+                                                    font.bold: true
+                                                }
                                             }
 
-                                            Item { Layout.fillWidth: true }
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 1
 
-                                            Text {
-                                                text: "Notification"
-                                                color: "#66a0ff"
-                                                font.pixelSize: 10
+                                                Text {
+                                                    text: model.appName ||
+                                                          model.appPackage
+
+                                                    color: "#e6e9ed"
+                                                    font.pixelSize: 11
+                                                    font.bold: true
+                                                    Layout.fillWidth: true
+                                                    elide: Text.ElideRight
+                                                }
+
+                                                Text {
+                                                    text: "Notification"
+                                                    color: "#6f7c89"
+                                                    font.pixelSize: 9
+                                                }
                                             }
                                         }
 
                                         Text {
-                                            text: model.title
-                                            visible: text.length > 0
+                                            text: model.title.length > 0
+                                                  ? model.title
+                                                  : (model.appName ||
+                                                     "Notification")
+
                                             color: "#f0f2f4"
                                             font.pixelSize: 13
                                             font.bold: true
@@ -541,6 +1111,10 @@ Window {
                                         }
 
                                         Text {
+                                            visible:
+                                                notificationCard.expanded &&
+                                                model.text.length > 0
+
                                             text: model.text
                                             color: "#aeb6c0"
                                             font.pixelSize: 12
@@ -548,25 +1122,75 @@ Window {
                                             Layout.fillWidth: true
                                         }
 
-                                        Button {
-                                            text: "Dismiss on phone"
-                                            Layout.alignment: Qt.AlignRight
-                                            enabled: Backend.peerConnected
-                                            onClicked: Backend.dismissPhoneNotification(model.notificationId)
+                                        Text {
+                                            visible:
+                                                !notificationCard.expanded &&
+                                                model.text.length > 0
+
+                                            text: "Click to view notification"
+                                            color: "#667381"
+                                            font.pixelSize: 10
+                                        }
+
+                                        RowLayout {
+                                            visible:
+                                                notificationCard.expanded
+
+                                            Layout.fillWidth: true
+                                            spacing: 8
+
+                                            Button {
+                                                text: "Dismiss on phone"
+                                                enabled: Backend.peerConnected
+
+                                                onClicked: {
+                                                    Backend.dismissPhoneNotification(
+                                                        model.notificationId
+                                                    )
+                                                }
+                                            }
+
+                                            Item {
+                                                Layout.fillWidth: true
+                                            }
+
+                                            Text {
+                                                text: "Click to collapse"
+                                                color: "#667381"
+                                                font.pixelSize: 10
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: notificationMouse
+
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+
+                                        onClicked: {
+                                            notificationCard.expanded =
+                                                !notificationCard.expanded
                                         }
                                     }
                                 }
 
                                 Label {
                                     anchors.centerIn: parent
-                                    visible: Backend.notificationModel.count === 0
+                                    visible:
+                                        Backend.notificationModel.count === 0
+
                                     text: "No notifications received yet"
                                     color: "#65707d"
                                 }
                             }
                         }
 
-                        // 3 Clipboard
+                        // =========================================================
+                        // 3 — CLIPBOARD
+                        // =========================================================
+
                         Item {
                             ColumnLayout {
                                 anchors.fill: parent
@@ -577,15 +1201,24 @@ Window {
 
                                     TextField {
                                         id: phoneClipboardField
+
                                         Layout.fillWidth: true
-                                        placeholderText: "Text to put on phone clipboard..."
+                                        placeholderText:
+                                            "Text to put on phone clipboard..."
                                     }
 
                                     Button {
                                         text: "Send to phone"
-                                        enabled: Backend.peerConnected && phoneClipboardField.text.length > 0
+
+                                        enabled:
+                                            Backend.peerConnected &&
+                                            phoneClipboardField.text.length > 0
+
                                         onClicked: {
-                                            Backend.setPhoneClipboard(phoneClipboardField.text)
+                                            Backend.setPhoneClipboard(
+                                                phoneClipboardField.text
+                                            )
+
                                             phoneClipboardField.clear()
                                         }
                                     }
@@ -598,35 +1231,43 @@ Window {
                                     spacing: 8
                                     model: Backend.clipboardModel
 
-                                delegate: Rectangle {
-                                    width: ListView.view.width
-                                    height: clipboardText.implicitHeight + 28
-                                    radius: 10
-                                    color: "#12171d"
-                                    border.color: "#202731"
+                                    delegate: Rectangle {
+                                        width: ListView.view.width
+                                        height: clipboardText.implicitHeight + 28
+                                        radius: 10
+                                        color: "#12171d"
+                                        border.color: "#202731"
 
-                                    Text {
-                                        id: clipboardText
-                                        anchors.fill: parent
-                                        anchors.margins: 14
-                                        text: model.text
-                                        color: "#c5cbd2"
-                                        font.pixelSize: 12
-                                        wrapMode: Text.WordWrap
+                                        Text {
+                                            id: clipboardText
+
+                                            anchors.fill: parent
+                                            anchors.margins: 14
+
+                                            text: model.text
+                                            color: "#c5cbd2"
+                                            font.pixelSize: 12
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    Label {
+                                        anchors.centerIn: parent
+
+                                        visible:
+                                            Backend.clipboardModel.count === 0
+
+                                        text: "No clipboard items received yet"
+                                        color: "#65707d"
                                     }
                                 }
-
-                                Label {
-                                    anchors.centerIn: parent
-                                    visible: Backend.clipboardModel.count === 0
-                                    text: "No clipboard items received yet"
-                                    color: "#65707d"
-                                }
-                            }
                             }
                         }
 
-                        // 4 Files
+                        // =========================================================
+                        // 4 — FILES
+                        // =========================================================
+
                         Item {
                             ListView {
                                 anchors.fill: parent
@@ -638,15 +1279,24 @@ Window {
                                     width: ListView.view.width
                                     height: 70
                                     radius: 10
-                                    color: mouse.containsMouse ? "#1a222c" : "#12171d"
-                                    border.color: mouse.containsMouse ? "#3a4655" : "#202731"
+
+                                    color: mouse.containsMouse
+                                           ? "#1a222c"
+                                           : "#12171d"
+
+                                    border.color: mouse.containsMouse
+                                                  ? "#3a4655"
+                                                  : "#202731"
 
                                     MouseArea {
                                         id: mouse
+
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: Backend.sharedFilesModel.openFile(index)
+
+                                        onClicked:
+                                            Backend.sharedFilesModel.openFile(index)
                                     }
 
                                     RowLayout {
@@ -670,6 +1320,7 @@ Window {
 
                                         ColumnLayout {
                                             Layout.fillWidth: true
+
                                             Text {
                                                 text: model.fileName
                                                 color: "#e5e8ec"
@@ -678,8 +1329,14 @@ Window {
                                                 elide: Text.ElideRight
                                                 Layout.fillWidth: true
                                             }
+
                                             Text {
-                                                text: root.formatBytes(model.totalBytes) + "  •  Click to open"
+                                                text:
+                                                    root.formatBytes(
+                                                        model.totalBytes
+                                                    ) +
+                                                    "  •  Click to open"
+
                                                 color: "#7f8995"
                                                 font.pixelSize: 11
                                             }
@@ -689,14 +1346,20 @@ Window {
 
                                 Label {
                                     anchors.centerIn: parent
-                                    visible: Backend.sharedFilesModel.count === 0
+
+                                    visible:
+                                        Backend.sharedFilesModel.count === 0
+
                                     text: "No shared files received yet"
                                     color: "#65707d"
                                 }
                             }
                         }
 
-                        // 5 Connection
+                        // =========================================================
+                        // 5 — CONNECTION
+                        // =========================================================
+
                         Flickable {
                             contentWidth: width
                             contentHeight: connectionColumn.implicitHeight
@@ -704,6 +1367,7 @@ Window {
 
                             ColumnLayout {
                                 id: connectionColumn
+
                                 width: parent.width
                                 spacing: 14
 
@@ -735,8 +1399,10 @@ Window {
 
                                         Text {
                                             text: Backend.peerConnected
-                                                  ? "Peer: " + Backend.peerDeviceName
+                                                  ? "Peer: " +
+                                                    Backend.peerDeviceName
                                                   : "No phone is currently connected."
+
                                             color: "#89939f"
                                             font.pixelSize: 12
                                         }
@@ -763,16 +1429,21 @@ Window {
                                         }
 
                                         Button {
-                                            text: Backend.serverRunning ? "Stop server" : "Start server"
-                                            onClicked: Backend.serverRunning
-                                                       ? Backend.stopTcpServer()
-                                                       : Backend.startTcpServer()
+                                            text: Backend.serverRunning
+                                                  ? "Stop server"
+                                                  : "Start server"
+
+                                            onClicked:
+                                                Backend.serverRunning
+                                                ? Backend.stopTcpServer()
+                                                : Backend.startTcpServer()
                                         }
 
                                         Text {
                                             text: Backend.serverRunning
                                                   ? "Listening for PhoneLink connections on TCP 4040."
                                                   : "Server is stopped."
+
                                             color: "#89939f"
                                             font.pixelSize: 12
                                         }
@@ -799,22 +1470,33 @@ Window {
                                         }
 
                                         Button {
-                                            text: Backend.registering ? "Stop advertising" : "Advertise device"
-                                            onClicked: Backend.registering
-                                                       ? Backend.stopRegistration()
-                                                       : Backend.registerOnMdns()
+                                            text: Backend.registering
+                                                  ? "Stop advertising"
+                                                  : "Advertise device"
+
+                                            onClicked:
+                                                Backend.registering
+                                                ? Backend.stopRegistration()
+                                                : Backend.registerOnMdns()
                                         }
 
                                         Text {
                                             text: Backend.registering
                                                   ? "Advertising _phonelink._tcp."
                                                   : "Not advertising."
-                                            color: Backend.registering ? "#43d17a" : "#89939f"
+
+                                            color:
+                                                Backend.registering
+                                                ? "#43d17a"
+                                                : "#89939f"
+
                                             font.pixelSize: 12
                                         }
 
                                         Text {
-                                            visible: Backend.errorMessage.length > 0
+                                            visible:
+                                                Backend.errorMessage.length > 0
+
                                             text: Backend.errorMessage
                                             color: "#ff7373"
                                             font.pixelSize: 11
@@ -831,9 +1513,13 @@ Window {
         }
     }
 
-    // Pairing dialog remains part of the existing backend contract.
+    // ================================================================
+    // PAIRING POPUP
+    // ================================================================
+
     Popup {
         id: pairingPopup
+
         anchors.centerIn: Overlay.overlay
         width: 430
         padding: 24
@@ -860,7 +1546,10 @@ Window {
             }
 
             Text {
-                text: Backend.pairingDeviceName + " wants to pair with this computer."
+                text:
+                    Backend.pairingDeviceName +
+                    " wants to pair with this computer."
+
                 color: "#aeb6c0"
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
@@ -876,7 +1565,9 @@ Window {
             }
 
             Text {
-                text: "Confirm that this PIN matches the one shown on your phone."
+                text:
+                    "Confirm that this PIN matches the one shown on your phone."
+
                 color: "#7f8995"
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true

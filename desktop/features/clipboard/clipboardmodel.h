@@ -12,6 +12,7 @@ struct ClipboardItem
 class ClipboardModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_PROPERTY(QString latestText READ latestText NOTIFY latestChanged)
 
 public:
     enum Roles
@@ -22,10 +23,17 @@ public:
     explicit ClipboardModel(QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent) const override;
+
     QVariant data(const QModelIndex &index, int role) const override;
+    
     QHash<int, QByteArray> roleNames() const override;
 
     void addClipboard(const QString &text);
+
+    QString latestText() const;
+
+signals: 
+    void latestChanged();
 
 private:
     QList<ClipboardItem> m_items;

@@ -17,6 +17,10 @@ class MessageModel : public QAbstractListModel
 {
     Q_OBJECT
 
+    Q_PROPERTY(QString latestAddress READ latestAddress NOTIFY latestChanged)
+    Q_PROPERTY(QString latestBody READ latestBody NOTIFY latestChanged)
+    Q_PROPERTY(bool latestIsIncoming READ latestIsIncoming NOTIFY latestChanged)
+
 public:
     enum Roles
     {
@@ -33,11 +37,17 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
 
+    QString latestAddress() const;
+    QString latestBody() const;
+    bool latestIsIncoming() const;
+
     void addMessage(const QString &id,
                     const QString &address,
                     const QString &body,
                     bool isIncoming,
                     qint64 timestamp);
+signals:
+    void latestChanged();
 
 private:
     QList<MessageItem> m_items;

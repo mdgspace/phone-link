@@ -100,4 +100,30 @@ void NotificationModel::removeNotification(const QString &id)
             return;
         }
     }
+
+    emit latestChanged();
+}
+
+QString NotificationModel::latestAppName() const
+{
+    if (m_items.isEmpty())
+        return {};
+
+    return m_items.last().appName;
+}
+
+QString NotificationModel::latestTitle() const
+{
+    if (m_items.isEmpty())
+        return {};
+
+    return m_items.last().title;
+}
+
+QString NotificationModel::latestText() const
+{
+    if (m_items.isEmpty())
+        return {};
+
+    return m_items.last().text;
 }

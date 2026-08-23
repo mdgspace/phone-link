@@ -67,6 +67,7 @@ void SharedFilesModel::addFile(const QString &transferId,
 
     endInsertRows();
     emit countChanged();
+    emit latestChanged();
 }
 
 void SharedFilesModel::openFile(int index)
@@ -79,4 +80,20 @@ void SharedFilesModel::openFile(int index)
         return;
 
     QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+QString SharedFilesModel::latestFileName() const
+{
+    if (m_items.isEmpty())
+        return {};
+
+    return m_items.last().fileName;
+}
+
+QString SharedFilesModel::latestFileSize() const
+{
+    if (m_items.isEmpty())
+        return {};
+
+    return m_items.last().fileSize;
 }

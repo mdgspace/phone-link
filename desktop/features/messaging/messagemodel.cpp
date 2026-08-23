@@ -68,4 +68,29 @@ void MessageModel::addMessage(const QString &id,
     m_items.append(item);
 
     endInsertRows();
+    emit latestChanged();
+}
+
+QString MessageModel::latestAddress() const
+{
+    if (m_items.isEmpty())
+        return {};
+
+    return m_items.last().address;
+}
+
+QString MessageModel::latestBody() const
+{
+    if (m_items.isEmpty())
+        return {};
+
+    return m_items.last().body;
+}
+
+bool MessageModel::latestIsIncoming() const
+{
+    if (m_items.isEmpty())
+        return false;
+
+    return m_items.last().isIncoming;
 }

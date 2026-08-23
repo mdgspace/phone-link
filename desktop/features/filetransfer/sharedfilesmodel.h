@@ -17,6 +17,12 @@ class SharedFilesModel : public QAbstractListModel
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
 
+    Q_PROPERTY(QString latestFileName READ latestFileName NOTIFY latestChanged)
+    Q_PROPERTY(QString latestFileSize READ latestFileSize NOTIFY latestChanged)
+
+signals:
+    void latestChanged();
+
 public:
     enum Roles
     {
@@ -32,6 +38,10 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
+
+    QString latestFileName() const;
+    QString latestFileSize() const;
+
 
     void addFile(const QString &transferId,
                  const QString &fileName,
