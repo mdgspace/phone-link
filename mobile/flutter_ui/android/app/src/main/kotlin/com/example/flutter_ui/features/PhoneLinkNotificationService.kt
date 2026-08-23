@@ -17,8 +17,9 @@ class PhoneLinkNotificationService : NotificationListenerService() {
          * Cancels the Android notification identified by StatusBarNotification.key.
          * Returns false if the listener service is not currently connected.
          */
-        fun cancelNotification(key: String): Boolean {
+        fun dismissNotification(key: String): Boolean {
             val service = instance ?: return false
+
             return try {
                 service.cancelNotification(key)
                 true
@@ -49,14 +50,20 @@ class PhoneLinkNotificationService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val extras = sbn.notification.extras
+
         val map = mapOf(
             "key" to sbn.key,
             "app_package" to sbn.packageName,
             "app_name" to getAppName(sbn.packageName),
-            "title" to (extras.getCharSequence("android.title")?.toString() ?: ""),
-            "text" to (extras.getCharSequence("android.text")?.toString() ?: ""),
+            "title" to (
+                extras.getCharSequence("android.title")?.toString() ?: ""
+            ),
+            "text" to (
+                extras.getCharSequence("android.text")?.toString() ?: ""
+            ),
             "posted_at" to (sbn.postTime / 1000)
         )
+
         handler?.onNotificationPosted(map)
     }
 

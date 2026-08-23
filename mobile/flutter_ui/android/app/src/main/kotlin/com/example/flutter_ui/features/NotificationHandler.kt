@@ -32,19 +32,16 @@ class NotificationHandler(
                     result.success(null)
                 }
 
-                "cancelNotification" -> {
+                "dismissNotification" -> {
                     val key = call.argument<String>("key")
+
                     if (key.isNullOrEmpty()) {
                         result.error("INVALID_KEY", "Notification key is required", null)
-                    } else if (PhoneLinkNotificationService.cancelNotification(key)) {
-                        result.success(null)
-                    } else {
-                        result.error(
-                            "NOTIFICATION_SERVICE_UNAVAILABLE",
-                            "Notification listener is not connected",
-                            null
-                        )
-                    }
+                        return@setMethodCallHandler
+                    } 
+
+                    PhoneLinkNotificationService.dismissNotification(key)
+                    result.success(null)
                 }
 
                 else -> result.notImplemented()

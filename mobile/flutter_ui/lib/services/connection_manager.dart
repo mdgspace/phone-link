@@ -11,23 +11,23 @@ import '../data/paired_device.dart';
 import 'pairing_service.dart';
 
 const String _phoneLinkServerCertificate = r'''-----BEGIN CERTIFICATE-----
-MIIDGTCCAgGgAwIBAgIUBilJq5FSq/GqvtH4ubaZdl6IuzUwDQYJKoZIhvcNAQEL
-BQAwHDEaMBgGA1UEAwwRUGhvbmVMaW5rIERlc2t0b3AwHhcNMjYwODIyMTQ1MzIx
-WhcNMzYwODE5MTQ1MzIxWjAcMRowGAYDVQQDDBFQaG9uZUxpbmsgRGVza3RvcDCC
-ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALn0OT0iXli3rYTWVkh/HIvf
-MMRwefOHJOASyPMFwRIFXSW3sh6EMc6S+/wZk1NU4hDagid3eKkANtSSFqpIqcaD
-oLbBkdyGdrM3vdTu3+fdT3fuPriEqPummCQozS77GDJ2PSC2M/OMGcp3sS4JDJNW
-LKR0UwowXn95krHLLSUOgFAOSpNE4PdxgczJcsBnfLTDfwWI4STDjJQkC8fNYO02
-xXigZs0H+RXb6Nmc+CQ9XEjSoV+SzoN5R95f44xD5WOyDNva3OSyY5PT7i3VxtdU
-d9H47hpliThFH4n6nKTB5JoRROdetHPZBAM7dF0AaLz5eGFaHaStV+gCaD18QisC
-AwEAAaNTMFEwHQYDVR0OBBYEFD1Nn/eMsBXsJToK3IREZHx0sRZoMB8GA1UdIwQY
-MBaAFD1Nn/eMsBXsJToK3IREZHx0sRZoMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
-hvcNAQELBQADggEBAJ/6EhywwKd0lq/7Ipge4bB20DTnq6UwYIrGYCgtYGqNc3g5
-EFzeaLp9BkwXtb1t43D5iBtg7KeOBiu28+TytSOAtr5t/oCLV+dhVbnvt6+ZEbGB
-+wJjrVISgzmnVFPs9yFl39xKABMqvVRr2xoTfmx2MtX4Gq4TbtLICdCjKempyu4B
-XccmWXeS6pkCOnVClXvgXXWMJPUBXcgOK8+6wxBYq+bUUe0YaO3n9+9IAPAcoy6X
-OQPWKaBu3m9kyHVGFwmX6jdTyxOC0dIXPGlg8rvkUnrQKv2GWmPAqJDEsiIoFQ7N
-wRYco7dwI8jzL1NYw2H1wS2AWkuWS7Psv8gqmhY=
+MIIDGTCCAgGgAwIBAgIUdixLA2MOa5NRy/luf/SwM4OSv9AwDQYJKoZIhvcNAQEL
+BQAwHDEaMBgGA1UEAwwRUGhvbmVMaW5rIERlc2t0b3AwHhcNMjYwODIyMTUxNjEy
+WhcNMzYwODE5MTUxNjEyWjAcMRowGAYDVQQDDBFQaG9uZUxpbmsgRGVza3RvcDCC
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALo0otd7ZCNr0jtAMVRU0vgC
+Q3Gt9ozpP5DCInHXDCo+6IXenfZk6H60CHYrl6m68RpKvPB7fmr1pRFYjtFzm3B5
+CUVK1R2X9KorbtscmHHwVl0ss+HlbYe9twBrtsRJVYwsn0F38tVZqNGS9mXWH0Qk
+JzrElt9BFgUD2xj4sYiw1qxnCGBEaotrqlmjeVE+sTpu86Msz5O6tY9O1xbSdcyx
+Ip4DwRtBPlKZo4S1WvAaVdrSOAQ8mg04VJVuav2iQWWsd4wzW5bfXj03BRuoWibR
+AEDt7D48+34ZdiFj0/WVYWA7kJa9ZqWrgulm0W6ZEApj1+w5MTSK7IIA2SbiYd0C
+AwEAAaNTMFEwHQYDVR0OBBYEFIsxXGc25niVvqygwmAbMqmqnt9VMB8GA1UdIwQY
+MBaAFIsxXGc25niVvqygwmAbMqmqnt9VMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
+hvcNAQELBQADggEBAJlINnUO112Xsp2jHrxn9Etdatav5cKkTRyLIRZG3vJ8ELt/
+svAjCeoUdjyUG2U/4W2d872l0IPouQM6rtMuEu5VOy8MhMlyhXlDgr3BnK56mEJY
+grolE/5xjcBQOmc9dFD8OYDKl9oGb+r9Dr02tT2vFTkUrUBMMHmI7QYAcoIqpliO
+Qs2cIyOAqU8nXG28DggRR7xjQlkY9KPcicXXTb6+IFLidb604lJPv6/rnNa4YUDD
+brUfwMIlGayYEsu1qGX7rLx8NvAhf63J3iFbkA9WLNVqbTrDp40eupeaVU0lOJic
+gQKNffzhOkZkrge9CH5xz3w1Knc6mwzvmrkIrrA=
 -----END CERTIFICATE-----
 ''';
 
@@ -73,15 +73,23 @@ class ConnectionManager extends ChangeNotifier {
     _setState(ConnectionState.connecting);
 
     try {
-      final securityContext = SecurityContext(withTrustedRoots: false)
-      ..setTrustedCertificatesBytes(Uint8List.fromList(utf8.encode(_phoneLinkServerCertificate)));
+      final certificatePem = _phoneLinkServerCertificate.trim();
 
       _socket = await SecureSocket.connect(
         device.ipv4.address,
         device.port,
         timeout: const Duration(seconds: 6),
-        context: securityContext,
-        onBadCertificate: (certificate) => certificate.pem.trim() == _phoneLinkServerCertificate.trim(),
+        onBadCertificate: (certificate) {
+          debugPrint('========== SERVER CERTIFICATE ==========');
+          debugPrint(certificate.pem);
+          debugPrint('========================================');
+          debugPrint(
+            'SHA256: ${certificate.der.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':')}',
+          );
+
+          return certificate.pem.trim() ==
+              _phoneLinkServerCertificate.trim();
+        },
       );
       _socket!.setOption(SocketOption.tcpNoDelay, true);
 
