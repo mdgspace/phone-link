@@ -6,19 +6,22 @@ MdnsManager::MdnsManager(QObject *parent)
 {
 }
 
-void MdnsManager::run()
+void MdnsManager::start()
 {
-    qDebug() << "[mDNS] Avahi thread started";
+    qDebug() << "[mDNS] start() called";
 
-    m_poll = avahi_simple_poll_new();
+    if (m_poll)
+        return;
+
+    m_poll = avahi_threaded_poll_new();
     if (!m_poll) {
-        qWarning() << "[mDNS] Failed to create AvahiSimplePoll";
+        qWarning() << "[mDNS] Failed to create AvahiThreadedPoll";
         return;
     }
 
     int error = 0;
     m_client = avahi_client_new(
-        avahi_simple_poll_get(m_poll),
+        avahi_threaded_poll_get(m_poll),
         AVAHI_CLIENT_NO_FAIL,
         &MdnsManager::clientCallback,
         this,
@@ -28,59 +31,47 @@ void MdnsManager::run()
     if (!m_client) {
         qWarning() << "[mDNS] Failed to create AvahiClient:"
                    << avahi_strerror(error);
+        avahi_threaded_poll_free(m_poll);
+        m_poll = nullptr;
         return;
     }
 
-    qDebug() << "[mDNS] Entering Avahi event loop";
-    avahi_simple_poll_loop(m_poll);
-
-    qDebug() << "[mDNS] Avahi event loop exited";
-}
-
-void MdnsManager::start()
-{
-    qDebug() << "[mDNS] start() called";
-
-    if (m_thread.joinable()) {
-        qDebug() << "[mDNS] thread already running";
+    if (avahi_threaded_poll_start(m_poll) < 0) {
+        qWarning() << "[mDNS] Failed to start Avahi thread";
+        avahi_client_free(m_client);
+        m_client = nullptr;
+        avahi_threaded_poll_free(m_poll);
+        m_poll = nullptr;
         return;
     }
 
-    m_thread = std::thread(&MdnsManager::run, this);
+    qDebug() << "[mDNS] Avahi thread started";
 }
-
-
 
 void MdnsManager::stop()
 {
-    // Stop discovery
+    if (!m_poll)
+        return;
+
+    avahi_threaded_poll_stop(m_poll);
+
     if (m_browser) {
         avahi_service_browser_free(m_browser);
         m_browser = nullptr;
     }
 
-    // Stop service registration
     if (m_group) {
-        avahi_entry_group_reset(m_group);
         avahi_entry_group_free(m_group);
         m_group = nullptr;
     }
 
-    // Stop Avahi event loop
-    if (m_poll) {
-        avahi_simple_poll_quit(m_poll);
+    if (m_client) {
+        avahi_client_free(m_client);
+        m_client = nullptr;
     }
 
-    // Join worker thread
-    if (m_thread.joinable()) {
-        m_thread.join();
-    }
-
-    // Free poll object
-    if (m_poll) {
-        avahi_simple_poll_free(m_poll);
-        m_poll = nullptr;
-    }
+    avahi_threaded_poll_free(m_poll);
+    m_poll = nullptr;
 }
 
 MdnsManager::~MdnsManager()
@@ -92,8 +83,6 @@ void MdnsManager::clientCallback(AvahiClient *client,
                                  AvahiClientState state,
                                  void *userdata)
 {
-    Q_UNUSED(client);
-
     auto *self = static_cast<MdnsManager *>(userdata);
 
     qDebug() << "[mDNS] clientCallback state =" << state;
@@ -102,18 +91,18 @@ void MdnsManager::clientCallback(AvahiClient *client,
 
     case AVAHI_CLIENT_S_RUNNING:
         qDebug() << "[mDNS] Avahi client running";
-        self->m_ready = true;
+        self->publishPending();
         break;
 
     case AVAHI_CLIENT_FAILURE:
-        qWarning() << "Avahi client failure";
-        // You could stop the poll here if you want:
-        // avahi_simple_poll_quit(self->m_poll);
+        qWarning() << "[mDNS] Avahi client failure:"
+                   << avahi_strerror(avahi_client_errno(client));
         break;
 
     case AVAHI_CLIENT_S_COLLISION:
     case AVAHI_CLIENT_S_REGISTERING:
-        // Name collision or re-registering — normal states
+        if (self->m_group)
+            avahi_entry_group_reset(self->m_group);
         break;
 
     default:
@@ -121,48 +110,87 @@ void MdnsManager::clientCallback(AvahiClient *client,
     }
 }
 
-void MdnsManager::registerService(const QString &name,
+bool MdnsManager::registerService(const QString &name,
                                   const QString &serviceType,
                                   quint16 port,
                                   const QString &deviceId,
                                   int protocolVersion)
 {
-    if (!m_ready) {
-        qWarning() << "[mDNS] registerService called before Avahi ready";
-        return;
+    if (!m_poll || !m_client) {
+        qWarning() << "[mDNS] registerService called before Avahi started";
+        return false;
     }
 
-    m_serviceType = serviceType;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_pending.name = name;
+        m_pending.serviceType = serviceType;
+        m_pending.port = port;
+        m_pending.deviceId = deviceId;
+        m_pending.protocolVersion = protocolVersion;
+        m_pending.present = true;
+    }
+
+    avahi_threaded_poll_lock(m_poll);
+    const bool published = publishPending();
+    avahi_threaded_poll_unlock(m_poll);
+    return published;
+}
+
+bool MdnsManager::publishPending()
+{
+    PendingService pending;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_pending.present)
+            return false;
+        pending = m_pending;
+    }
+
+    if (!m_client || avahi_client_get_state(m_client) != AVAHI_CLIENT_S_RUNNING) {
+        qDebug() << "[mDNS] service queued until Avahi is running";
+        return true;
+    }
+
+    if (m_group)
+        avahi_entry_group_reset(m_group);
+    else
+        m_group = avahi_entry_group_new(m_client, nullptr, nullptr);
 
     if (!m_group) {
-        m_group = avahi_entry_group_new(m_client, nullptr, nullptr);
+        qWarning() << "[mDNS] avahi_entry_group_new failed:"
+                   << avahi_strerror(avahi_client_errno(m_client));
+        return false;
     }
 
     qDebug() << "[mDNS] registerService called"
-             << "name =" << name
-             << "type =" << serviceType
-             << "port =" << port;
+             << "name =" << pending.name
+             << "type =" << pending.serviceType
+             << "port =" << pending.port;
 
     // TXT records mirror the phone's own registration
     // (mobile/flutter_ui/lib/services/mdns_registration.dart): id, proto,
     // plat. We additionally publish "name" since mdns_discovery.dart
     // reads txt['name'] for display, falling back to the raw service
     // instance name if absent.
-    const QByteArray idTxt = ("id=" + deviceId).toUtf8();
-    const QByteArray protoTxt = ("proto=" + QString::number(protocolVersion)).toUtf8();
+    const QByteArray idTxt = ("id=" + pending.deviceId).toUtf8();
+    const QByteArray protoTxt =
+        ("proto=" + QString::number(pending.protocolVersion)).toUtf8();
     const QByteArray platTxt = QByteArray("plat=desktop");
-    const QByteArray nameTxt = ("name=" + name).toUtf8();
+    const QByteArray nameTxt = ("name=" + pending.name).toUtf8();
+    const QByteArray serviceName = pending.name.toUtf8();
+    const QByteArray serviceType = pending.serviceType.toUtf8();
 
-    avahi_entry_group_add_service(
+    const int added = avahi_entry_group_add_service(
         m_group,
         AVAHI_IF_UNSPEC,
         AVAHI_PROTO_UNSPEC,
         AvahiPublishFlags(0),
-        name.toUtf8().constData(),
-        serviceType.toUtf8().constData(),
+        serviceName.constData(),
+        serviceType.constData(),
         nullptr,
         nullptr,
-        port,
+        pending.port,
         idTxt.constData(),
         protoTxt.constData(),
         platTxt.constData(),
@@ -170,7 +198,20 @@ void MdnsManager::registerService(const QString &name,
         nullptr
         );
 
-    avahi_entry_group_commit(m_group);
+    if (added < 0) {
+        qWarning() << "[mDNS] add service failed:"
+                   << avahi_strerror(added);
+        return false;
+    }
+
+    const int committed = avahi_entry_group_commit(m_group);
+    if (committed < 0) {
+        qWarning() << "[mDNS] commit service failed:"
+                   << avahi_strerror(committed);
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -239,7 +280,7 @@ void MdnsManager::resolveCallback(AvahiServiceResolver *r,
                                   AvahiProtocol,
                                   AvahiResolverEvent event,
                                   const char *name,
-                                  const char *,
+                                  const char *type,
                                   const char *,
                                   const char *,
                                   const AvahiAddress *addr,
@@ -267,11 +308,12 @@ void MdnsManager::resolveCallback(AvahiServiceResolver *r,
         [self,
          n = QString::fromUtf8(name),
          a = QString::fromUtf8(address),
+         t = QString::fromUtf8(type ? type : ""),
          p = port]() {
             emit self->deviceDiscovered(
                 n,
                 a,
-                self->m_serviceType,
+                t,
                 p
                 );
         },

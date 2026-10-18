@@ -16,6 +16,7 @@ public:
     explicit TcpServer(QObject *parent = nullptr);
     bool start(quint16 port);
     void stop();
+    QString errorString() const { return m_errorString; }
 
 private slots:
     void onNewConnection();
@@ -23,6 +24,7 @@ private slots:
     void onClientDisconnected();
 
 private:
+    QString m_errorString;
     QSslServer m_server;
     QSet<QSslSocket*> m_clients;
     QHash<QSslSocket*, QByteArray> m_buffers;

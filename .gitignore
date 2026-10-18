@@ -6,6 +6,12 @@ android/local.properties
 ios/Pods/
 ios/.symlinks/
 *.log
-test
 .qtcreator/
-resources/server.key
+.vscode/
+
+# TLS private key. The certificate is tracked; the key must stay local.
+server.key
+
+memory
+docs
+shell.nix

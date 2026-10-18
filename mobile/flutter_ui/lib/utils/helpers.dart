@@ -32,14 +32,17 @@ Future<String?> getLocalIPv4() async {
 }
 
 Stream<bool> wifiAvailableStream() async* {
-  yield await _isLocalNetworkUsable();
+  yield await isLocalNetworkUsable();
 
   await for (final _ in Connectivity().onConnectivityChanged) {
-    yield await _isLocalNetworkUsable();
+    yield await isLocalNetworkUsable();
   }
 }
 
-Future<bool> _isLocalNetworkUsable() async {
+/// True when the phone has a non-loopback IPv4 address on some interface.
+/// Connectivity "wifi" alone is not enough: a saved network can be reported
+/// before the interface actually has an address.
+Future<bool> isLocalNetworkUsable() async {
   try {
     final connectivity = await Connectivity().checkConnectivity();
     if (connectivity.contains(ConnectivityResult.none)) return false;

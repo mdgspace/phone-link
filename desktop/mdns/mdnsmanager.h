@@ -1,13 +1,13 @@
 #pragma once
 
 #include <QObject>
-#include <thread>
+#include <mutex>
 
 extern "C" {
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
 #include <avahi-client/lookup.h>
-#include <avahi-common/simple-watch.h>
+#include <avahi-common/thread-watch.h>
 #include <avahi-common/error.h>
 }
 
@@ -18,14 +18,14 @@ public:
     explicit MdnsManager(QObject *parent = nullptr);
     ~MdnsManager();
 
-    void registerService(const QString &name,
+    // Queues the service and publishes it on the Avahi thread.
+    // Avahi objects are not safe to use from the Qt GUI thread.
+    bool registerService(const QString &name,
                          const QString &serviceType,
                          quint16 port,
                          const QString &deviceId,
                          int protocolVersion = 1);
 
-    // void startDiscovery();
-    // void stopDiscovery();
     void start();
     void stop();
 
@@ -36,16 +36,25 @@ signals:
                           quint16 port);
 
 private:
-    void run();
+    struct PendingService {
+        QString name;
+        QString serviceType;
+        quint16 port = 0;
+        QString deviceId;
+        int protocolVersion = 1;
+        bool present = false;
+    };
 
-    std::thread m_thread;
-    AvahiSimplePoll *m_poll = nullptr;
+    // Caller must hold the Avahi threaded-poll lock, or be inside an Avahi callback.
+    bool publishPending();
+
+    AvahiThreadedPoll *m_poll = nullptr;
     AvahiClient *m_client = nullptr;
     AvahiEntryGroup *m_group = nullptr;
     AvahiServiceBrowser *m_browser = nullptr;
 
-    QString m_serviceType = "_phonelink._tcp";
-    bool m_ready = false;
+    std::mutex m_mutex;
+    PendingService m_pending;
 
     static void clientCallback(AvahiClient *, AvahiClientState, void *);
     static void browseCallback(AvahiServiceBrowser *,

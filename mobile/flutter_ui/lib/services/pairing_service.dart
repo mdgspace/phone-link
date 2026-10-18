@@ -4,11 +4,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/paired_device.dart';
 
 const _kPairedDevicesKey = 'paired_devices';
+const _kResumeDeviceId = 'resume_device_id';
 
 class PairingService extends ChangeNotifier {
   List<PairedDevice> _paired = [];
   String? _pendingPin;
   String? _pendingDeviceId;
+  String? _resumeDeviceId;
+
+  /// Last desktop that reached `connected`, if it is still in the paired list.
+  PairedDevice? get resumeDevice {
+    final id = _resumeDeviceId;
+    if (id == null) return null;
+    return getDevice(id);
+  }
 
   List<PairedDevice> get pairedDevices => List.unmodifiable(_paired);
   String? get pendingPin => _pendingPin;
@@ -18,6 +27,24 @@ class PairingService extends ChangeNotifier {
     final raw = prefs.getString(_kPairedDevicesKey);
     if (raw != null && raw.isNotEmpty) {
       _paired = PairedDevice.listFromJson(raw);
+    }
+
+    _resumeDeviceId = prefs.getString(_kResumeDeviceId);
+    if (_resumeDeviceId != null && getDevice(_resumeDeviceId!) == null) {
+      _resumeDeviceId = null;
+      await prefs.remove(_kResumeDeviceId);
+    }
+  }
+
+  /// Remember which paired desktop to dial the next time the app opens.
+  /// Pass null when the user disconnects or that desktop is unpaired.
+  Future<void> setResumeDevice(String? deviceId) async {
+    _resumeDeviceId = (deviceId == null || deviceId.isEmpty) ? null : deviceId;
+    final prefs = await SharedPreferences.getInstance();
+    if (_resumeDeviceId == null) {
+      await prefs.remove(_kResumeDeviceId);
+    } else {
+      await prefs.setString(_kResumeDeviceId, _resumeDeviceId!);
     }
   }
 
@@ -59,6 +86,11 @@ class PairingService extends ChangeNotifier {
 
   Future<void> removeDevice(String deviceId) async {
     _paired.removeWhere((d) => d.deviceId == deviceId);
+    if (_resumeDeviceId == deviceId) {
+      _resumeDeviceId = null;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kResumeDeviceId);
+    }
     await _persist();
     notifyListeners();
   }
