@@ -125,8 +125,7 @@ void Backend::startTcpServer()
         return;
 
     if (!m_tcpServer.start(m_port)) {
-        m_errorMessage = QString("Failed to start TCP server on port %1 "
-                                  "(port may already be in use)").arg(m_port);
+        m_errorMessage = m_tcpServer.errorString();
         qWarning() << m_errorMessage;
         emit errorMessageChanged();
         return;
@@ -166,13 +165,18 @@ void Backend::registerOnMdns()
     if (m_registering)
         return;
 
-    m_mdnsManager.registerService(
-        m_deviceName,
-        m_serviceType,
-        m_port,
-        m_deviceId,
-        m_protocolVersion
-        );
+    if (!m_mdnsManager.registerService(
+            m_deviceName,
+            m_serviceType,
+            m_port,
+            m_deviceId,
+            m_protocolVersion)) {
+        m_errorMessage = QStringLiteral(
+            "Could not advertise this computer. Is avahi-daemon running?");
+        qWarning() << m_errorMessage;
+        emit errorMessageChanged();
+        return;
+    }
 
     m_registering = true;
     emit registeringChanged();
@@ -228,6 +232,24 @@ void Backend::onHelloReceived(const QString &deviceId, const QString &deviceName
 {
     m_recentDeviceNames[deviceId] = deviceName;
     qDebug() << "[Backend] Hello from" << deviceName << "(" << deviceId << ")";
+
+    // A phone that is already trusted skips pairing_request and only sends
+    // hello. Without this, m_peerConnected stays false after a Wi-Fi
+    // reconnect and desktop-to-phone commands stay blocked.
+    if (!isDeviceTrusted(deviceId) || !m_activeClient)
+        return;
+
+    if (m_pairingPending) {
+        m_pairingPending = false;
+        m_pairingPin.clear();
+        m_pairingDeviceId.clear();
+        m_pairingDeviceName.clear();
+        emit pairingPendingChanged();
+    }
+
+    m_peerConnected = true;
+    m_peerDeviceName = deviceName;
+    emit peerConnectionChanged();
 }
 
 void Backend::onPairingRequested(const QString &deviceId, const QString &pin)

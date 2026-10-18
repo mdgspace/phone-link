@@ -2,6 +2,7 @@
 
 #include <QDesktopServices>
 #include <QFileInfo>
+#include <QLocale>
 #include <QUrl>
 
 SharedFilesModel::SharedFilesModel(QObject *parent)
@@ -95,5 +96,5 @@ QString SharedFilesModel::latestFileSize() const
     if (m_items.isEmpty())
         return {};
 
-    return m_items.last().fileSize;
+    return QLocale().formattedDataSize(m_items.last().totalBytes);
 }

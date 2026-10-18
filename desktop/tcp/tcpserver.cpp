@@ -34,7 +34,9 @@ bool TcpServer::start(quint16 port)
     QFile keyFile(":/tls/server.key");
 
     if (!certFile.open(QIODevice::ReadOnly) || !keyFile.open(QIODevice::ReadOnly)) {
-        qWarning() << "[TLS] Could not load embedded server certificate/key";
+        m_errorString = QStringLiteral(
+            "Could not load the server certificate or private key");
+        qWarning() << "[TLS]" << m_errorString;
         return false;
     }
 
@@ -42,11 +44,15 @@ bool TcpServer::start(quint16 port)
     const QSslKey privateKey(keyFile.readAll(), QSsl::Rsa, QSsl::Pem);
 
     if (certificate.isNull() || privateKey.isNull()) {
-        qWarning() << "[TLS] Invalid server certificate or private key";
+        m_errorString = QStringLiteral(
+            "The server certificate or private key is invalid");
+        qWarning() << "[TLS]" << m_errorString;
         return false;
     }
 
-    QSslConfiguration configuration = QSslConfiguration::defaultServerConfiguration();
+    // Qt 6.11 dropped QSslConfiguration::defaultServerConfiguration().
+    // The server certificate, key, and protocol are set on the next lines.
+    QSslConfiguration configuration = QSslConfiguration::defaultConfiguration();
     configuration.setLocalCertificate(certificate);
     configuration.setPrivateKey(privateKey);
     configuration.setPeerVerifyMode(QSslSocket::VerifyNone);
@@ -56,9 +62,14 @@ bool TcpServer::start(quint16 port)
     m_server.setHandshakeTimeout(6000);
 
     if (!m_server.listen(QHostAddress::Any, port)) {
-        qWarning() << "TLS server failed to start:" << m_server.errorString();
+        m_errorString = QString("Failed to listen on port %1: %2")
+                            .arg(port)
+                            .arg(m_server.errorString());
+        qWarning() << "TLS server failed to start:" << m_errorString;
         return false;
     }
+
+    m_errorString.clear();
 
     qDebug() << "TLS TCP server listening on"
              << m_server.serverAddress() << ":" << m_server.serverPort();
