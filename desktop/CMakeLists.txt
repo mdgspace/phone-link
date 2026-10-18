@@ -99,6 +99,15 @@ set_source_files_properties(
         QT_QML_SINGLETON_TYPE TRUE
 )
 
+# server.key is gitignored. Generate it next to server.crt before configuring.
+qt_add_resources(app_phone_link "phonelink_tls"
+    PREFIX "/tls"
+    BASE "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+    FILES
+        resources/server.crt
+        resources/server.key
+)
+
 target_link_libraries(app_phone_link
     PRIVATE
         Qt6::Gui
