@@ -17,13 +17,17 @@ class PairedDevice {
     int? pairedAt,
   }) : pairedAt = pairedAt ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-  PairedDevice copyWith({String? lastKnownIp, String? deviceName}) {
+  PairedDevice copyWith({
+    String? lastKnownIp,
+    int? port,
+    String? deviceName,
+  }) {
     return PairedDevice(
       deviceId: deviceId,
       deviceName: deviceName ?? this.deviceName,
       platform: platform,
       lastKnownIp: lastKnownIp ?? this.lastKnownIp,
-      port: port,
+      port: port ?? this.port,
       pairedAt: pairedAt,
     );
   }

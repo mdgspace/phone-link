@@ -5,6 +5,7 @@ import 'data/local_device.dart';
 import 'services/clipboard_service.dart';
 import 'services/connection_manager.dart';
 import 'services/file_transfer_service_fast.dart';
+import 'services/mdns_discovery.dart';
 import 'services/mdns_registration.dart';
 import 'services/notification_service.dart';
 import 'services/pairing_service.dart';
@@ -13,8 +14,13 @@ import 'ui/home.dart';
 
 class PhoneLinkApp extends StatelessWidget {
   final LocalDeviceConfigService configService;
+  final PairingService pairingService;
 
-  const PhoneLinkApp({Key? key, required this.configService}) : super(key: key);
+  const PhoneLinkApp({
+    Key? key,
+    required this.configService,
+    required this.pairingService,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -26,21 +32,28 @@ class PhoneLinkApp extends StatelessWidget {
         ChangeNotifierProvider<MdnsRegistrationController>(
           create: (_) => MdnsRegistrationController(configService),
         ),
-        ChangeNotifierProvider<PairingService>(
-          create: (_) => PairingService()..load(),
+        ChangeNotifierProvider<PairingService>.value(value: pairingService),
+        ChangeNotifierProvider<MdnsDiscoveryController>(
+          create: (_) => MdnsDiscoveryController(),
         ),
-        ChangeNotifierProxyProvider<PairingService, ConnectionManager>(
-          create: (ctx) => ConnectionManager(
-            configService,
-            ctx.read<PairingService>(),
-          ),
-          update: (_, pairing, previous) {
+        ChangeNotifierProxyProvider2<PairingService, MdnsDiscoveryController,
+            ConnectionManager>(
+          create: (ctx) {
+            final manager = ConnectionManager(
+              configService,
+              ctx.read<PairingService>(),
+              ctx.read<MdnsDiscoveryController>(),
+            );
+            manager.restoreLastSession();
+            return manager;
+          },
+          update: (_, pairing, discovery, previous) {
             // Keep the same ConnectionManager instance. It owns the TCP
             // connection state and must not be recreated on rebuilds.
             if (previous != null) {
               return previous;
             }
-            return ConnectionManager(configService, pairing);
+            return ConnectionManager(configService, pairing, discovery);
           },
         ),
         ChangeNotifierProxyProvider<ConnectionManager, SmsService>(

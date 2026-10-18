@@ -14,6 +14,13 @@ void showAvailableDevicesSheet(BuildContext context) {
     context,
     listen: false,
   );
+  final discovery = Provider.of<MdnsDiscoveryController>(
+    context,
+    listen: false,
+  );
+  // Shared with reconnect. Do not stop it when the sheet closes, or a
+  // browse already in progress would be cancelled.
+  discovery.start();
 
   showModalBottomSheet(
     context: context,
@@ -23,9 +30,7 @@ void showAvailableDevicesSheet(BuildContext context) {
       return MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: connection),
-          ChangeNotifierProvider(
-            create: (_) => MdnsDiscoveryController()..start(),
-          ),
+          ChangeNotifierProvider.value(value: discovery),
         ],
         child: const _AvailableDevicesSheet(),
       );

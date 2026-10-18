@@ -49,6 +49,15 @@ class MdnsDiscoveryController extends ChangeNotifier {
     return result;
   }
 
+  /// Desktop advertises its stable id in the mDNS TXT record (`id=`).
+  /// Address and port can change; this id does not.
+  DiscoveredDevice? findByDeviceId(String deviceId) {
+    for (final device in devices) {
+      if (device.txt['id'] == deviceId) return device;
+    }
+    return null;
+  }
+
   Future<void> start() async {
     if (_discovery != null || _starting) return;
 

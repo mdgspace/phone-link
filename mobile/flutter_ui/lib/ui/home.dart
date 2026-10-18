@@ -91,6 +91,12 @@ class _ConnectedDevicePanel extends StatelessWidget {
         );
       case cm.ConnectionState.pairing:
         return _PairingView(connection: connection);
+      case cm.ConnectionState.waitingForNetwork:
+        return _StatusView(
+          icon: Icons.wifi_off,
+          label: 'Wi-Fi lost. Reconnecting when the network is back.',
+          color: Colors.orange,
+        );
       case cm.ConnectionState.reconnecting:
         return _StatusView(
           icon: Icons.sync_problem,
